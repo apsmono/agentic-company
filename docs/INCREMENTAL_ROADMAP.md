@@ -128,11 +128,11 @@ graph TD
 ### 📦 Version 2.0.0: Background Task Daemon
 **Goal**: Run a lightweight, resilient background worker daemon on the Mac mini that polls the database and executes tasks reliably.
 
-- [ ] **Step 3.1: Standalone Worker Daemon (`worker/`)**
+- [x] **Step 3.1: Standalone Worker Daemon (`worker/`)**
   - Create a lightweight Node.js/TypeScript daemon in a `worker/` subfolder.
   - Run under `pm2` with auto-restart on system boot.
 
-- [ ] **Step 3.2: Task Queue Consumer (`SKIP LOCKED`)**
+- [x] **Step 3.2: Task Queue Consumer (`SKIP LOCKED`)**
   - Implement safe queue polling using PostgreSQL:
     ```sql
     SELECT * FROM tasks 
@@ -143,11 +143,11 @@ graph TD
     ```
   - Acquire lease (`lease_until = NOW() + INTERVAL '5 minutes'`) and maintain background heartbeats every 30 seconds.
 
-- [ ] **Step 3.3: Live Log & Metric Ingestion**
+- [x] **Step 3.3: Live Log & Metric Ingestion**
   - Worker captures child process `stdout` / `stderr` and batch-inserts them into `run_logs`.
   - Update `runs` with duration, exit codes, and memory usage.
 
-- [ ] **Step 3.4: Deterministic Task Handlers & Crash Recovery**
+- [x] **Step 3.4: Deterministic Task Handlers & Crash Recovery**
   - Implement deterministic handlers: shell script executor, git fetcher, file generator.
   - Test crash resilience: simulate power outage or `SIGKILL`, verify task is released and retried after lease expiry.
 

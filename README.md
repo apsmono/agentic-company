@@ -47,14 +47,42 @@ Each task card links to an interactive slide-out **Results Inspector Drawer**:
 - **One-Click Run**: Click "Run Worker Now" on any task or "Run Worker Queue" in the header to simulate AI execution runs.
 - **Live Feedback**: Watch tasks transition to `Running`, stream real-time logs, and finish in either `Completed` or `Failed` status with synthesized payloads.
 
+### 6. Headless Worker Runtime (`v2.0`)
+A standalone Node.js/TypeScript daemon in `worker/` running continuously on the Mac mini (or local terminal):
+- **Safe Queue Polling**: Claims tasks using PostgreSQL `FOR UPDATE SKIP LOCKED` (`claim_next_task` RPC) ordered by priority and creation date.
+- **Rolling Lease & Crash Resilience**: Automatically maintains 30-second heartbeats and 5-minute task leases; if a worker crashes or loses power, tasks are safely re-claimed and retried after lease expiry.
+- **Buffered Log Streaming**: Streams child process `stdout`/`stderr` into `run_logs` in real time, viewable directly in the Cockpit inspector drawer.
+- **Deterministic Handlers**: Includes built-in handlers for `shell` (command execution), `echo` (health checks), and `file_generator` (artifact production).
+- **One-Way Door Enforcement**: Pauses irreversible tasks and creates approval records in `approvals` table for Chairman sign-off.
+
 ---
 
 ## 📁 Repository Structure
 
 ```
 agentic-company/
+├── worker/                                        # Headless Node/TS worker daemon (v2.0)
+│   ├── src/
+│   │   ├── config.ts                              # Environment and worker configuration
+│   │   ├── db.ts                                  # Database service (Supabase & Mock)
+│   │   ├── lease.ts                               # Heartbeat & rolling lease keeper
+│   │   ├── logger.ts                              # Buffered stdout/stderr streaming
+│   │   ├── types.ts                               # TypeScript schema definitions
+│   │   ├── handlers/                              # Handler registry & executors
+│   │   │   ├── index.ts
+│   │   │   ├── echo.ts
+│   │   │   ├── shell.ts
+│   │   │   └── file_generator.ts
+│   │   └── index.ts                               # Main daemon loop & signal traps
+│   ├── scripts/
+│   │   └── test_worker.ts                         # End-to-end integration test suite
+│   ├── package.json
+│   ├── tsconfig.json
+│   └── .env.example                               # Worker environment template
 ├── supabase/
-│   └── schema.sql                                 # Complete Postgres DDL, RLS policies, & seed data
+│   ├── schema.sql                                 # Complete Postgres DDL, RLS policies, & seed data
+│   └── migrations/
+│       └── 20261001_claim_task_rpc.sql            # claim_next_task RPC migration
 ├── docs/
 │   ├── AGENTIC_COMPANY_BUILD_PLAN.md              # Master Build Plan by @Arif Eko Pramono
 │   ├── PLAN_CRITIQUE.md                           # Architectural critique and risk mitigations
@@ -115,6 +143,43 @@ To enable live multi-client synchronization:
 To approve any One-Way Door action in the Approvals Desk, you will be prompted for your Chairman PIN.
 - Default PIN: `1234`
 - The PIN is stored locally in browser storage and can be updated anytime in the Chairman PIN dialog.
+
+### 4. Running the Worker Daemon (`worker/`)
+
+To run the headless worker daemon that processes tasks in the background:
+
+```bash
+cd worker
+npm install
+
+# Configure environment (optional, falls back to in-memory mock mode if unset)
+cp .env.example .env
+# Edit .env with your SUPABASE_URL and SUPABASE_KEY
+
+# Start the worker daemon
+npm start
+```
+
+### 5. Running Worker Integration Tests
+
+To run the automated verification suite covering task claiming, log streaming, shell execution, artifact generation, one-way door approvals, and crash recovery:
+
+```bash
+cd worker
+npm run test:worker
+```
+
+### 6. Running under `pm2` on a Mac mini
+
+For autonomous 24/7 background operation with automatic reboot recovery on a Mac mini:
+
+```bash
+npm install -g pm2
+cd worker
+pm2 start "npm start" --name "agentic-worker"
+pm2 save
+pm2 startup
+```
 
 ---
 

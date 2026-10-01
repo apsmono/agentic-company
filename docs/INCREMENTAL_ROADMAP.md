@@ -93,7 +93,7 @@ graph TD
 ### 📦 Version 1.4.0: Dual-Mode Persistence & Supabase Integration
 **Goal**: Connect the dashboard to Supabase while preserving the ability to run offline in Demo/Simulator mode.
 
-- [ ] **Step 2.1: Storage Adapter Pattern**
+- [x] **Step 2.1: Storage Adapter Pattern**
   - Create a clean JavaScript repository abstraction:
     ```javascript
     class StorageAdapter {
@@ -108,17 +108,17 @@ graph TD
   - Implement `LocalStorageAdapter` for instant offline testing and `SupabaseAdapter` for live database communication.
   - Provide a toggle in the UI: `Data Source: [Local Mock] | [Supabase Live]`.
 
-- [ ] **Step 2.2: Supabase Schema Migration Script**
+- [x] **Step 2.2: Supabase Schema Migration Script**
   - Create a migration file (`schema.sql`) creating all 9 tables:
     - `directives`, `tasks`, `runs`, `run_logs`, `artifacts`, `agents`, `approvals`, `decisions`, `workers`.
   - Add PostgreSQL indexes on `tasks(status, lease_until)` and `run_logs(run_id, ts)`.
   - Configure Row Level Security (RLS) policies.
 
-- [ ] **Step 2.3: Realtime Subscriptions (Desktop & Mobile Sync)**
+- [x] **Step 2.3: Realtime Subscriptions (Desktop & Mobile Sync)**
   - Integrate Supabase Realtime WebSocket listeners.
   - When the Mac mini worker updates a task or streams a log line, the UI updates without page reloads.
 
-- [ ] **Step 2.4: Chairman Access Gate**
+- [x] **Step 2.4: Chairman Access Gate**
   - Simple client-side passcode/token lock to prevent unauthorized approval actions when accessed over mobile or public tunnels.
 
 ---

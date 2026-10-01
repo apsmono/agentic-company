@@ -105,6 +105,25 @@ export interface Approval {
   created_at?: string;
 }
 
+export interface Directive {
+  id: string;
+  text: string;
+  status: 'inbox' | 'in_progress' | 'completed' | 'cancelled';
+  budget_limit?: number;
+  target_date?: string | null;
+  report?: string | null;
+  created_at?: string;
+}
+
+export interface Decision {
+  id: string;
+  date?: string;
+  decided_by: string;
+  decision: string;
+  reason: string;
+  created_at?: string;
+}
+
 export interface TaskHandlerResult {
   exitCode: number;
   summary: string;

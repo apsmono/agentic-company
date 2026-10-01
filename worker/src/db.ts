@@ -1,6 +1,6 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { WorkerConfig } from './config.js';
-import { Task, Run, RunLog, Artifact, WorkerInfo, Approval, TaskStatus } from './types.js';
+import { Task, Run, RunLog, Artifact, WorkerInfo, Approval, TaskStatus, Directive, Decision } from './types.js';
 import { LogBatchWriter } from './logger.js';
 
 export interface DatabaseService extends LogBatchWriter {
@@ -9,6 +9,7 @@ export interface DatabaseService extends LogBatchWriter {
   renewTaskLease(taskId: string, leaseDurationSeconds: number): Promise<boolean>;
   releaseTaskLease(taskId: string): Promise<boolean>;
   updateTaskStatus(taskId: string, status: TaskStatus, patch?: Partial<Task>): Promise<boolean>;
+  createTask(task: Task): Promise<boolean>;
   createRun(taskId: string, agentId?: string | null): Promise<Run>;
   finishRun(runId: string, data: {
     exitCode: number;
@@ -21,6 +22,11 @@ export interface DatabaseService extends LogBatchWriter {
   insertArtifacts(artifacts: Artifact[]): Promise<void>;
   updateWorkerHeartbeat(info: WorkerInfo): Promise<void>;
   createApproval(approval: Approval): Promise<void>;
+  createDecision(decision: Decision): Promise<void>;
+  getTodaySpend(): Promise<number>;
+  getRecentRuns(limit?: number): Promise<Run[]>;
+  getDirective(id: string): Promise<Directive | null>;
+  updateDirective(id: string, patch: Partial<Directive>): Promise<boolean>;
 }
 
 export class SupabaseDatabaseService implements DatabaseService {
@@ -213,14 +219,70 @@ export class SupabaseDatabaseService implements DatabaseService {
     }
   }
 
+  public async createTask(task: Task): Promise<boolean> {
+    const { error } = await this.client
+      .from('tasks')
+      .insert(task);
+    return !error;
+  }
+
+  public async createDecision(decision: Decision): Promise<void> {
+    const { error } = await this.client
+      .from('decisions')
+      .insert(decision);
+    if (error) {
+      console.error('[SupabaseDB] Failed to insert decision:', error.message);
+    }
+  }
+
   public async createApproval(approval: Approval): Promise<void> {
     const { error } = await this.client
       .from('approvals')
       .insert(approval);
-
     if (error) {
-      console.error('[SupabaseDB] Failed to create approval record:', error.message);
+      console.error('[SupabaseDB] Failed to insert approval:', error.message);
     }
+  }
+
+  public async getTodaySpend(): Promise<number> {
+    const midnight = new Date();
+    midnight.setUTCHours(0, 0, 0, 0);
+    const { data, error } = await this.client
+      .from('runs')
+      .select('cost_usd')
+      .gte('started_at', midnight.toISOString());
+
+    if (error || !data) return 0;
+    return data.reduce((acc, row) => acc + (Number(row.cost_usd) || 0), 0);
+  }
+
+  public async getRecentRuns(limit = 20): Promise<Run[]> {
+    const { data } = await this.client
+      .from('runs')
+      .select('*')
+      .order('started_at', { ascending: false })
+      .limit(limit);
+
+    return (data || []) as Run[];
+  }
+
+  public async getDirective(id: string): Promise<Directive | null> {
+    const { data } = await this.client
+      .from('directives')
+      .select('*')
+      .eq('id', id)
+      .maybeSingle();
+
+    return (data as Directive) || null;
+  }
+
+  public async updateDirective(id: string, patch: Partial<Directive>): Promise<boolean> {
+    const { error } = await this.client
+      .from('directives')
+      .update(patch)
+      .eq('id', id);
+
+    return !error;
   }
 }
 
@@ -234,6 +296,8 @@ export class MockDatabaseService implements DatabaseService {
   private artifacts: Artifact[] = [];
   private workers: Map<string, WorkerInfo> = new Map();
   private approvals: Approval[] = [];
+  private directives: Map<string, Directive> = new Map();
+  private decisions: Map<string, Decision> = new Map();
 
   constructor(seed: boolean = true) {
     if (seed) {
@@ -248,6 +312,8 @@ export class MockDatabaseService implements DatabaseService {
     this.artifacts = [];
     this.workers.clear();
     this.approvals = [];
+    this.directives.clear();
+    this.decisions.clear();
   }
 
   public isMock(): boolean {
@@ -369,6 +435,46 @@ export class MockDatabaseService implements DatabaseService {
 
   public async createApproval(approval: Approval): Promise<void> {
     this.approvals.push(approval);
+  }
+
+  public async createTask(task: Task): Promise<boolean> {
+    this.tasks.set(task.id, task);
+    return true;
+  }
+
+  public async createDecision(decision: Decision): Promise<void> {
+    this.decisions.set(decision.id, decision);
+  }
+
+  public async getTodaySpend(): Promise<number> {
+    let sum = 0;
+    for (const run of this.runs.values()) {
+      sum += run.cost_usd || 0;
+    }
+    return sum;
+  }
+
+  public async getRecentRuns(limit = 20): Promise<Run[]> {
+    return Array.from(this.runs.values()).slice(-limit);
+  }
+
+  public async getDirective(id: string): Promise<Directive | null> {
+    return this.directives.get(id) || null;
+  }
+
+  public async updateDirective(id: string, patch: Partial<Directive>): Promise<boolean> {
+    const d = this.directives.get(id);
+    if (!d) return false;
+    Object.assign(d, patch);
+    return true;
+  }
+
+  public addDirective(d: Directive): void {
+    this.directives.set(d.id, d);
+  }
+
+  public getDecisions(): Decision[] {
+    return Array.from(this.decisions.values());
   }
 
   public getTask(id: string): Task | undefined {

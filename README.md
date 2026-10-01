@@ -66,6 +66,13 @@ An end-to-end multi-agent software engineering workflow:
 - **Automated Reviewer Audit**: Evaluates PR diffs against task acceptance criteria and Company Engineering Standards.
 - **One-Way Door Merge Hook**: Merging into `main` pauses for Chairman 4-digit PIN verification.
 
+### 8. The Autonomous Loop: CEO Planning & Mobile Alerting (`v2.2`)
+Closes the loop between strategic Chairman vision and unattended execution:
+- **CEO Directive Decomposition Engine**: Listens for Chairman initiatives in `directives`, decomposes them into 3-tier task trees (CTO Spec $\rightarrow$ Dev Worker $\rightarrow$ Reviewer), and logs Architectural Decision Records into `decisions`.
+- **Automated Executive Board Memos**: Synthesizes weekly executive summaries aggregating task completion rates, tokens burned, cumulative dollar costs, and blocker resolutions.
+- **Telegram Push Alerting & Mobile Approvals**: Dispatches instant push notifications when One-Way Door actions arise; allows Chairman to reply `/approve <task_id>` directly from mobile.
+- **Financial Circuit Breakers & Kill Switch**: Automatically tracks daily cumulative token spend; pauses worker queue consumption if the daily cap (e.g. $15.00) is reached, and honors the instant Emergency Kill Switch.
+
 ---
 
 ## 📁 Repository Structure
@@ -73,9 +80,10 @@ An end-to-end multi-agent software engineering workflow:
 ```
 agentic-company/
 ├── agents/                                        # Agent role definitions & prompts
+│   ├── ceo.json                                   # Chief Executive Officer profile & tools
 │   ├── dev_worker.json                            # Senior Dev Worker profile & tool whitelist
 │   └── reviewer.json                              # Security & Reviewer profile
-├── worker/                                        # Headless Node/TS worker daemon (v2.1)
+├── worker/                                        # Headless Node/TS worker daemon (v2.2)
 │   ├── src/
 │   │   ├── config.ts                              # Environment and worker configuration
 │   │   ├── db.ts                                  # Database service (Supabase & Mock)
@@ -83,6 +91,8 @@ agentic-company/
 │   │   ├── logger.ts                              # Buffered stdout/stderr streaming
 │   │   ├── types.ts                               # TypeScript schema definitions
 │   │   ├── worktree.ts                            # Isolated Git worktree manager
+│   │   ├── circuit_breaker.ts                     # Daily spend cap & kill switch guard
+│   │   ├── telegram.ts                            # Mobile push alerts & /approve bot client
 │   │   ├── agent/                                 # Agent security sandbox & tool harness
 │   │   │   ├── sandbox.ts                         # Path containment & secret protection
 │   │   │   └── tools.ts                           # Whitelisted tool dispatcher
@@ -93,11 +103,14 @@ agentic-company/
 │   │   │   ├── file_generator.ts
 │   │   │   ├── agent_dev.ts                       # Dev Worker coding task handler
 │   │   │   ├── agent_review.ts                    # Reviewer acceptance criteria auditor
-│   │   │   └── git_merge.ts                       # Chairman-approved merge hook
+│   │   │   ├── git_merge.ts                       # Chairman-approved merge hook
+│   │   │   ├── ceo_plan.ts                        # CEO directive decomposition handler
+│   │   │   └── board_memo.ts                      # Executive Board Memo generator
 │   │   └── index.ts                               # Main daemon loop & signal traps
 │   ├── scripts/
 │   │   ├── test_worker.ts                         # Queue & telemetry integration tests
-│   │   └── test_coding_pipeline.ts                # Autonomous coding & review test suite
+│   │   ├── test_coding_pipeline.ts                # Autonomous coding & review test suite
+│   │   └── test_ceo_loop.ts                       # CEO planning, circuit breaker & alert suite
 │   ├── package.json
 │   ├── tsconfig.json
 │   └── .env.example                               # Worker environment template

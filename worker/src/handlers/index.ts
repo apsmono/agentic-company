@@ -5,6 +5,9 @@ import { fileGeneratorHandler } from './file_generator.js';
 import { agentDevHandler } from './agent_dev.js';
 import { agentReviewHandler } from './agent_review.js';
 import { gitMergeHandler } from './git_merge.js';
+import { createCeoPlanHandler } from './ceo_plan.js';
+import { createBoardMemoHandler } from './board_memo.js';
+import { DatabaseService } from '../db.js';
 
 export class HandlerRegistry {
   private handlers: Map<string, TaskHandler> = new Map();
@@ -29,6 +32,18 @@ export class HandlerRegistry {
 
     this.register('git_merge', gitMergeHandler);
     this.register('merge', gitMergeHandler);
+  }
+
+  public registerExecutiveHandlers(db: DatabaseService): void {
+    const ceoHandler = createCeoPlanHandler(db);
+    const boardMemoHandler = createBoardMemoHandler(db);
+
+    this.register('ceo_plan', ceoHandler);
+    this.register('directive_decompose', ceoHandler);
+    this.register('strategic_plan', ceoHandler);
+
+    this.register('board_memo', boardMemoHandler);
+    this.register('executive_report', boardMemoHandler);
   }
 
   public register(taskType: string, handler: TaskHandler): void {

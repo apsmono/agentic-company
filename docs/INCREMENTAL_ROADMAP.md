@@ -184,17 +184,17 @@ graph TD
 ### 📦 Version 2.2.0: CEO Planning & Mobile Alerting
 **Goal**: Complete the loop where high-level directives turn into deployed software with automated reporting.
 
-- [ ] **Step 5.1: CEO Decomposition Engine**
+- [x] **Step 5.1: CEO Decomposition Engine**
   - CEO agent listens for new `directives`.
   - Breaks directives down into technical specifications and populates `tasks` assigned to the CTO.
 
-- [ ] **Step 5.2: Automated Weekly Board Memo & Decision Ledger**
+- [x] **Step 5.2: Automated Weekly Board Memo & Decision Ledger**
   - Every Friday, the CEO agent aggregates runs, tokens spent, completed PRs, and blockers into an executive report in `artifacts`.
 
-- [ ] **Step 5.3: Telegram Bot for Chairman Approvals**
+- [x] **Step 5.3: Telegram Bot for Chairman Approvals**
   - Simple Telegram bot running on the Mac mini.
   - Sends immediate push notifications when a task lands in `One-Way Door Pending`.
   - Chairman can reply `/approve <task_id>` directly from mobile.
 
-- [ ] **Step 5.4: Automated Circuit Breakers**
+- [x] **Step 5.4: Automated Circuit Breakers**
   - Hard daily spending limits shut off worker polling if token consumption exceeds the configured dollar cap.

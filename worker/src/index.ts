@@ -4,6 +4,8 @@ import { WorkerHeartbeatManager, TaskLeaseKeeper } from './lease.js';
 import { TaskLogger } from './logger.js';
 import { defaultHandlerRegistry } from './handlers/index.js';
 import { Task, Run, TaskExecutionContext, TaskHandlerResult } from './types.js';
+import { defaultCircuitBreaker } from './circuit_breaker.js';
+import { defaultTelegramNotifier } from './telegram.js';
 
 export class WorkerDaemon {
   private config: WorkerConfig;
@@ -13,11 +15,15 @@ export class WorkerDaemon {
   private isShuttingDown = false;
   private activeTaskPromise: Promise<void> | null = null;
   private currentLeaseKeeper: TaskLeaseKeeper | null = null;
+  private lastCircuitAlertTime = 0;
 
   constructor(customConfig?: Partial<WorkerConfig>, customDb?: DatabaseService) {
     this.config = { ...loadConfig(), ...customConfig };
     this.db = customDb || createDatabaseService(this.config);
     this.heartbeatManager = new WorkerHeartbeatManager(this.db, this.config);
+
+    // Register executive and strategic handlers with DB access
+    defaultHandlerRegistry.registerExecutiveHandlers(this.db);
   }
 
   public async start(): Promise<void> {
@@ -26,7 +32,7 @@ export class WorkerDaemon {
     this.isShuttingDown = false;
 
     console.log('\n======================================================');
-    console.log(`🤖 Agentic Company Worker Daemon Starting`);
+    console.log(`🤖 Agentic Company Worker Daemon Starting (v2.2.0)`);
     console.log(`🆔 Worker ID:    ${this.config.workerId}`);
     console.log(`🖥️  Host:         ${this.config.workerHost}`);
     console.log(`⚡ Mode:         ${this.db.isMock() ? 'Local Mock / In-Memory' : 'Supabase Live'}`);
@@ -76,6 +82,19 @@ export class WorkerDaemon {
   private async runLoop(): Promise<void> {
     while (!this.isShuttingDown) {
       try {
+        // Financial Circuit Breaker & Kill Switch Gate
+        const safety = await defaultCircuitBreaker.evaluateSafety(this.db);
+        if (!safety.allowExecution) {
+          const now = Date.now();
+          if (now - this.lastCircuitAlertTime > 60000) {
+            console.warn(`\x1b[33m[WorkerDaemon] ⚠️ Safety Gate: ${safety.reason}\x1b[0m`);
+            void defaultTelegramNotifier.sendCircuitBreakerAlert(safety.reason || 'Safety limit reached', safety.currentSpendUsd, safety.dailyCapUsd);
+            this.lastCircuitAlertTime = now;
+          }
+          await new Promise(resolve => setTimeout(resolve, this.config.pollIntervalMs));
+          continue;
+        }
+
         const task = await this.db.claimNextTask(this.config.workerId, this.config.leaseDurationSeconds);
         if (task) {
           this.activeTaskPromise = this.executeTask(task);
@@ -157,6 +176,15 @@ export class WorkerDaemon {
       });
 
       await this.db.updateTaskStatus(task.id, 'approval_pending');
+
+      // Dispatch real-time Telegram push notification to Chairman
+      void defaultTelegramNotifier.sendApprovalAlert({
+        taskId: task.id,
+        action: handlerResult.requestApproval.action,
+        requestedBy: task.owner_agent || this.config.workerId,
+        note: handlerResult.requestApproval.note
+      });
+
       await this.db.finishRun(run.id, {
         exitCode: 0,
         summary: `Awaiting 1-Way Door Approval: ${handlerResult.requestApproval.action}`,

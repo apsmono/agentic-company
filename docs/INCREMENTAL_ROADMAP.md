@@ -158,22 +158,22 @@ graph TD
 ### 📦 Version 2.1.0: Claude Agent SDK & Isolated Worktrees
 **Goal**: Enable developer agents to safely clone, branch, write code, run tests, and open GitHub PRs without corrupting the local development environment.
 
-- [ ] **Step 4.1: Claude Agent SDK Wrapper**
+- [x] **Step 4.1: Claude Agent SDK Wrapper**
   - Build a generic task runner powered by the Claude Agent SDK (or Gemini Structured Tools).
   - Inject role-specific system prompts (`Company Handbook`, `Engineering Standards`).
   - Restrict tools strictly per agent:
     - Dev Worker: `readFile`, `writeFile`, `runTest`, `gitCommit`.
     - Reviewer: `readDiff`, `runLinter`, `postReviewComment`.
 
-- [ ] **Step 4.2: Isolated Git Worktree Management**
+- [x] **Step 4.2: Isolated Git Worktree Management**
   - Workers run inside dedicated temporary git worktrees (`.worktrees/task-XYZ`).
   - Guarantees that parallel worker tasks never clash on branch state or uncommitted files.
 
-- [ ] **Step 4.3: Automated Test Verification & Reviewer Critique**
+- [x] **Step 4.3: Automated Test Verification & Reviewer Critique**
   - Dev Worker is required to execute local test suites before completing work.
   - Reviewer agent automatically analyzes the PR diff against task `acceptance_criteria` and provides a score.
 
-- [ ] **Step 4.4: One-Way Door Merge Hook**
+- [x] **Step 4.4: One-Way Door Merge Hook**
   - Merging a PR into `main` requires Chairman approval via the dashboard.
   - Once Chairman clicks **Approve**, the worker daemon triggers `git merge` or GitHub API merge.
 

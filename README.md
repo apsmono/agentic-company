@@ -55,27 +55,49 @@ A standalone Node.js/TypeScript daemon in `worker/` running continuously on the 
 - **Deterministic Handlers**: Includes built-in handlers for `shell` (command execution), `echo` (health checks), and `file_generator` (artifact production).
 - **One-Way Door Enforcement**: Pauses irreversible tasks and creates approval records in `approvals` table for Chairman sign-off.
 
+### 7. Autonomous Roles & Safe Coding Pipeline (`v2.1`)
+An end-to-end multi-agent software engineering workflow:
+- **Corporate Knowledge Base**: [docs/COMPANY_HANDBOOK.md](file:///Users/mbp-m1-pro/Developer/Automation/agentic-company/docs/COMPANY_HANDBOOK.md) and [docs/ENGINEERING_STANDARDS.md](file:///Users/mbp-m1-pro/Developer/Automation/agentic-company/docs/ENGINEERING_STANDARDS.md) loaded into every agent session.
+- **Isolated Git Worktrees (`.worktrees/task-XYZ`)**: Parallel agent tasks execute in dedicated worktrees on task-specific branches without corrupting the active repository or colliding with concurrent workers.
+- **Hardened Security Sandbox**: Jailed filesystem access prohibiting directory traversal and strictly preventing access to secret `.env` files.
+- **Whitelisted Tool Harness**: Enforces role-specific tools:
+  - Dev Worker: `readFile`, `writeFile`, `listFiles`, `runTest`, `gitCommit`.
+  - Reviewer: `readFile`, `readDiff`, `listFiles`, `runTest`, `scoreCriteria`.
+- **Automated Reviewer Audit**: Evaluates PR diffs against task acceptance criteria and Company Engineering Standards.
+- **One-Way Door Merge Hook**: Merging into `main` pauses for Chairman 4-digit PIN verification.
+
 ---
 
 ## 📁 Repository Structure
 
 ```
 agentic-company/
-├── worker/                                        # Headless Node/TS worker daemon (v2.0)
+├── agents/                                        # Agent role definitions & prompts
+│   ├── dev_worker.json                            # Senior Dev Worker profile & tool whitelist
+│   └── reviewer.json                              # Security & Reviewer profile
+├── worker/                                        # Headless Node/TS worker daemon (v2.1)
 │   ├── src/
 │   │   ├── config.ts                              # Environment and worker configuration
 │   │   ├── db.ts                                  # Database service (Supabase & Mock)
 │   │   ├── lease.ts                               # Heartbeat & rolling lease keeper
 │   │   ├── logger.ts                              # Buffered stdout/stderr streaming
 │   │   ├── types.ts                               # TypeScript schema definitions
+│   │   ├── worktree.ts                            # Isolated Git worktree manager
+│   │   ├── agent/                                 # Agent security sandbox & tool harness
+│   │   │   ├── sandbox.ts                         # Path containment & secret protection
+│   │   │   └── tools.ts                           # Whitelisted tool dispatcher
 │   │   ├── handlers/                              # Handler registry & executors
 │   │   │   ├── index.ts
 │   │   │   ├── echo.ts
 │   │   │   ├── shell.ts
-│   │   │   └── file_generator.ts
+│   │   │   ├── file_generator.ts
+│   │   │   ├── agent_dev.ts                       # Dev Worker coding task handler
+│   │   │   ├── agent_review.ts                    # Reviewer acceptance criteria auditor
+│   │   │   └── git_merge.ts                       # Chairman-approved merge hook
 │   │   └── index.ts                               # Main daemon loop & signal traps
 │   ├── scripts/
-│   │   └── test_worker.ts                         # End-to-end integration test suite
+│   │   ├── test_worker.ts                         # Queue & telemetry integration tests
+│   │   └── test_coding_pipeline.ts                # Autonomous coding & review test suite
 │   ├── package.json
 │   ├── tsconfig.json
 │   └── .env.example                               # Worker environment template
@@ -84,6 +106,8 @@ agentic-company/
 │   └── migrations/
 │       └── 20261001_claim_task_rpc.sql            # claim_next_task RPC migration
 ├── docs/
+│   ├── COMPANY_HANDBOOK.md                        # Corporate mission, tone & non-negotiables
+│   ├── ENGINEERING_STANDARDS.md                   # CTO coding, testing & review standards
 │   ├── AGENTIC_COMPANY_BUILD_PLAN.md              # Master Build Plan by @Arif Eko Pramono
 │   ├── PLAN_CRITIQUE.md                           # Architectural critique and risk mitigations
 │   ├── INCREMENTAL_ROADMAP.md                     # Semantic version rollout (v1.3 -> v2.2)

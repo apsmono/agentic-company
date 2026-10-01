@@ -1,6 +1,6 @@
 {
   "name": "agentic-company-worker",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Autonomous background worker daemon for Agentic Company",
   "type": "module",
   "main": "dist/index.js",
@@ -8,7 +8,9 @@
     "dev": "tsx watch src/index.ts",
     "start": "tsx src/index.ts",
     "build": "tsc",
-    "test:worker": "tsx scripts/test_worker.ts"
+    "test:worker": "tsx scripts/test_worker.ts",
+    "test:pipeline": "tsx scripts/test_coding_pipeline.ts",
+    "test:all": "tsx scripts/test_worker.ts && tsx scripts/test_coding_pipeline.ts"
   },
   "keywords": [
     "agentic",

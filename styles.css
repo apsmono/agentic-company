@@ -1725,7 +1725,190 @@ html, body {
   }
 }
 
-@media (max-width: 1100px) {
+/* ==========================================================================
+   Dual-Mode Storage & PIN Gate (v1.4)
+   ========================================================================== */
+
+/* Storage Mode Button in Header */
+.btn-mode-toggle {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-medium);
+  color: var(--text-main);
+  padding: 0.45rem 0.85rem;
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.btn-mode-toggle:hover {
+  border-color: var(--border-glow);
+  background: var(--bg-card-hover);
+}
+.mode-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.mode-dot.local {
+  background: #8b5cf6;
+  box-shadow: 0 0 8px rgba(139, 92, 246, 0.6);
+}
+.mode-dot.live {
+  background: #10b981;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.7);
+  animation: pulse-live 2s infinite;
+}
+@keyframes pulse-live {
+  0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+  70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+/* Modal sizing */
+.modal-xs {
+  max-width: 340px;
+}
+.modal-md {
+  max-width: 540px;
+}
+
+/* Mode Selection Radio Cards */
+.mode-selection-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 0.4rem;
+}
+.mode-radio-label {
+  display: block;
+  cursor: pointer;
+}
+.mode-radio-label input[type="radio"] {
+  display: none;
+}
+.radio-card {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 0.85rem 1rem;
+  transition: all var(--transition-fast);
+}
+.mode-radio-label input[type="radio"]:checked + .radio-card {
+  border-color: var(--accent-primary);
+  background: rgba(99, 102, 241, 0.12);
+  box-shadow: 0 0 0 1px var(--accent-primary);
+}
+.radio-card-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 0.25rem;
+}
+.radio-card-desc {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+/* Connection Status Box */
+.connection-status-box {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 0.65rem 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-top: 0.75rem;
+}
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-dim);
+}
+.status-dot.connected {
+  background: var(--color-done);
+  box-shadow: 0 0 8px var(--color-done);
+}
+.status-dot.error {
+  background: var(--color-failed);
+  box-shadow: 0 0 8px var(--color-failed);
+}
+
+/* Chairman PIN Gate */
+.pin-gate-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.5rem 0 1rem 0;
+}
+.pin-prompt-text {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+.pin-input-wrap {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+.pin-code-input {
+  width: 160px;
+  height: 48px;
+  font-size: 1.75rem;
+  letter-spacing: 0.6rem;
+  text-align: center;
+  background: var(--bg-tertiary);
+  border: 2px solid var(--border-medium);
+  border-radius: var(--radius-md);
+  color: var(--text-main);
+  outline: none;
+  font-family: var(--font-mono);
+  transition: all var(--transition-fast);
+}
+.pin-code-input:focus {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 12px rgba(99, 102, 241, 0.4);
+}
+.pin-keypad {
+  display: grid;
+  grid-template-columns: repeat(3, 56px);
+  gap: 0.5rem;
+  justify-content: center;
+}
+.pin-key {
+  width: 56px;
+  height: 44px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-medium);
+  color: var(--text-main);
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.pin-key:hover {
+  background: rgba(99, 102, 241, 0.2);
+  border-color: var(--accent-primary);
+}
+.pin-key:active {
+  transform: scale(0.95);
+}
+.pin-key.pin-clear {
+  color: var(--color-failed);
+}
+.pin-key.pin-backspace {
+  color: var(--color-running);
+}
   .section-banner {
     flex-direction: column;
     align-items: flex-start;

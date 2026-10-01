@@ -63,6 +63,10 @@
 
       <!-- Header Controls -->
       <div class="header-actions">
+        <button type="button" id="btnStorageMode" class="btn btn-mode-toggle" title="Storage Mode: Click to configure Cloud / Local Persistence">
+          <span class="mode-dot local" id="modeDot"></span>
+          <span id="modeLabel">Local Mock ⚡</span>
+        </button>
         <button type="button" id="btnKillSwitch" class="btn btn-kill-switch" title="Emergency Freeze: Halt all autonomous agent processes immediately">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <circle cx="12" cy="12" r="10"></circle>
@@ -784,9 +788,106 @@
     </div>
   </dialog>
 
+  <!-- MODAL: Cloud Persistence & Supabase Settings -->
+  <dialog class="app-dialog" id="supabaseConfigModal">
+    <div class="dialog-content modal-md">
+      <div class="dialog-header">
+        <div style="display:flex; align-items:center; gap:0.5rem;">
+          <span style="font-size:1.25rem;">🌐</span>
+          <h2>Cloud Data Bus Settings (Supabase)</h2>
+        </div>
+        <button type="button" class="btn-close-dialog" id="btnCloseSupabaseModal">&times;</button>
+      </div>
+      <form id="supabaseConfigForm" method="dialog">
+        <div class="form-group">
+          <label class="form-label">Active Storage Adapter Mode</label>
+          <div class="mode-selection-group">
+            <label class="mode-radio-label">
+              <input type="radio" name="storageModeChoice" value="local" id="radioModeLocal" checked>
+              <div class="radio-card">
+                <div class="radio-card-title">Local Mock ⚡</div>
+                <div class="radio-card-desc">Browser memory &amp; localStorage. Zero network dependencies; ideal for UI prototyping and offline simulation.</div>
+              </div>
+            </label>
+            <label class="mode-radio-label">
+              <input type="radio" name="storageModeChoice" value="supabase" id="radioModeSupabase">
+              <div class="radio-card">
+                <div class="radio-card-title">Supabase Live 🌐</div>
+                <div class="radio-card-desc">PostgreSQL Single Source of Truth with Realtime WebSockets sync across laptop, phone, and Mac mini workers.</div>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div id="supabaseCredsWrap" class="creds-wrap">
+          <div class="form-group">
+            <label for="inputSupabaseUrl" class="form-label">Supabase Project URL</label>
+            <input type="url" id="inputSupabaseUrl" class="form-control font-mono" placeholder="https://your-project-id.supabase.co">
+          </div>
+          <div class="form-group">
+            <label for="inputSupabaseAnonKey" class="form-label">Public Anon Key (Safe for Browser)</label>
+            <input type="password" id="inputSupabaseAnonKey" class="form-control font-mono" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
+            <small style="color:var(--text-dim); font-size:0.72rem; display:block; margin-top:0.25rem;">
+              Never enter the service_role key. The dashboard strictly uses the public anon key + RLS policies.
+            </small>
+          </div>
+          <div class="connection-status-box" id="connectionStatusBox">
+            <span class="status-dot" id="connStatusDot"></span>
+            <span id="connStatusText">Status: Not Connected</span>
+          </div>
+        </div>
+
+        <div class="dialog-actions">
+          <button type="button" class="btn btn-secondary" id="btnTestSupabaseConn">Test Ping</button>
+          <button type="button" class="btn btn-secondary" id="btnCancelSupabaseModal">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="btnSaveSupabaseConfig">Save &amp; Switch</button>
+        </div>
+      </form>
+    </div>
+  </dialog>
+
+  <!-- MODAL: Chairman Security PIN Gate -->
+  <dialog class="app-dialog" id="pinGateModal">
+    <div class="dialog-content modal-xs">
+      <div class="dialog-header">
+        <div style="display:flex; align-items:center; gap:0.5rem;">
+          <span style="font-size:1.25rem;">🔒</span>
+          <h2>Chairman PIN Gate</h2>
+        </div>
+        <button type="button" class="btn-close-dialog" id="btnClosePinModal">&times;</button>
+      </div>
+      <div class="pin-gate-body">
+        <p class="pin-prompt-text" id="pinPromptText">Enter Chairman 4-digit PIN to authorize irreversible action:</p>
+        <div class="pin-input-wrap">
+          <input type="password" id="inputChairmanPin" class="pin-code-input" maxlength="4" placeholder="••••" autocomplete="off" autofocus>
+        </div>
+        <div class="pin-keypad">
+          <button type="button" class="pin-key" data-digit="1">1</button>
+          <button type="button" class="pin-key" data-digit="2">2</button>
+          <button type="button" class="pin-key" data-digit="3">3</button>
+          <button type="button" class="pin-key" data-digit="4">4</button>
+          <button type="button" class="pin-key" data-digit="5">5</button>
+          <button type="button" class="pin-key" data-digit="6">6</button>
+          <button type="button" class="pin-key" data-digit="7">7</button>
+          <button type="button" class="pin-key" data-digit="8">8</button>
+          <button type="button" class="pin-key" data-digit="9">9</button>
+          <button type="button" class="pin-key pin-clear" id="btnPinClear">C</button>
+          <button type="button" class="pin-key" data-digit="0">0</button>
+          <button type="button" class="pin-key pin-backspace" id="btnPinBackspace">⌫</button>
+        </div>
+      </div>
+      <div class="dialog-actions">
+        <button type="button" class="btn btn-secondary" id="btnCancelPinModal">Cancel</button>
+        <button type="button" class="btn btn-primary" id="btnSubmitPin">Authorize</button>
+      </div>
+    </div>
+  </dialog>
+
   <!-- Notification Toast Container -->
   <div class="toast-container" id="toastContainer" aria-live="polite"></div>
 
+  <!-- Supabase JS Client (Official CDN with graceful offline fallback) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="app.js"></script>
 </body>
 </html>

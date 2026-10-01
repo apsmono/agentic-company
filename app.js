@@ -1,8 +1,9 @@
 /**
- * Agentic Company Cockpit (v1.3.0)
- * Pure Vanilla JavaScript implementation with Corporate Governance,
- * Chairman Directives, One-Way Door Approvals Desk, Agent Roster,
- * Financial Guardrails, HTML5 Drag-and-Drop, and Multi-Agent Simulator.
+ * Agentic Company Cockpit (v1.4.0)
+ * Corporate Governance, Chairman Directives, One-Way Door Approvals Desk,
+ * Agent Roster, Financial Guardrails, HTML5 Drag-and-Drop, Multi-Agent Simulator,
+ * Pluggable StorageAdapter Pattern (LocalStorage & Supabase Cloud),
+ * Realtime WebSockets Sync, and Chairman Security PIN Gate.
  */
 
 // ============================================================================
@@ -96,7 +97,7 @@ const DEFAULT_DIRECTIVES = [
     costUsd: 1.05,
     context: "Establish automated developer agent sandboxes using temporary Git worktrees. Ensure Reviewer agent validates all PR diffs before halting for Chairman One-Way Door merge approval.",
     childTaskIds: ["TASK-101", "TASK-102", "TASK-103"],
-    ceoReport: "CEO Note: Decomposed into 3 technical tasks with CTO. TASK-101 (Worktree scaffolding) is complete, TASK-102 is currently coding, and TASK-103 has halted at the One-Way Door gate pending Chairman sign-off."
+    ceoReport: "CEO Note: Decomposed into 3 technical tasks with CTO. TASK-101 is complete, TASK-102 is currently coding, and TASK-103 has halted at the One-Way Door gate pending Chairman sign-off."
   },
   {
     id: "DIR-2",
@@ -381,20 +382,479 @@ const DEFAULT_TASKS = [
 ];
 
 // ============================================================================
-// Application State Manager (TaskManager)
+// StorageAdapter Pattern (Decoupled Persistence Layer)
 // ============================================================================
-class TaskManager {
+
+/**
+ * Base Abstract StorageAdapter
+ * Defines the contract that both LocalStorageAdapter and SupabaseAdapter must satisfy.
+ */
+class StorageAdapter {
+  async getTasks() { throw new Error("Not implemented"); }
+  async saveTask(task) { throw new Error("Not implemented"); }
+  async updateTaskStatus(id, newStatus) { throw new Error("Not implemented"); }
+  async attachResult(id, resultData) { throw new Error("Not implemented"); }
+  async deleteTask(id) { throw new Error("Not implemented"); }
+
+  async getDirectives() { throw new Error("Not implemented"); }
+  async saveDirective(directive) { throw new Error("Not implemented"); }
+
+  async getApprovals() { throw new Error("Not implemented"); }
+  async approveOneWayTask(taskId, notes) { throw new Error("Not implemented"); }
+  async rejectOneWayTask(taskId, reason) { throw new Error("Not implemented"); }
+  async reviseOneWayTask(taskId, feedback) { throw new Error("Not implemented"); }
+
+  subscribeToChanges(onTaskChange, onLogInsert) { /* default no-op */ }
+  unsubscribe() { /* default no-op */ }
+}
+
+/**
+ * LocalStorageAdapter
+ * Zero-dependency offline mock storage using browser localStorage.
+ */
+class LocalStorageAdapter extends StorageAdapter {
   constructor() {
+    super();
     this.storageKey = "agentic_company_tasks_v1";
     this.legacyKey = "workerflow_tasks_v1";
     this.directivesKey = "agentic_company_directives_v1";
+  }
 
-    this.tasks = this.loadTasks();
-    this.directives = this.loadDirectives();
+  async getTasks() {
+    try {
+      let saved = localStorage.getItem(this.storageKey);
+      if (saved) return JSON.parse(saved);
+
+      const legacySaved = localStorage.getItem(this.legacyKey);
+      if (legacySaved) {
+        const parsed = JSON.parse(legacySaved);
+        localStorage.setItem(this.storageKey, JSON.stringify(parsed));
+        return parsed;
+      }
+    } catch (e) {
+      console.warn("Failed to load local tasks, using defaults:", e);
+    }
+    return JSON.parse(JSON.stringify(DEFAULT_TASKS));
+  }
+
+  async saveTask(task) {
+    const tasks = await this.getTasks();
+    const idx = tasks.findIndex(t => t.id === task.id);
+    if (idx !== -1) {
+      tasks[idx] = task;
+    } else {
+      tasks.unshift(task);
+    }
+    localStorage.setItem(this.storageKey, JSON.stringify(tasks));
+    return task;
+  }
+
+  async updateTaskStatus(id, newStatus) {
+    const tasks = await this.getTasks();
+    const task = tasks.find(t => t.id === id);
+    if (task) {
+      task.status = newStatus;
+      localStorage.setItem(this.storageKey, JSON.stringify(tasks));
+      return task;
+    }
+    return null;
+  }
+
+  async attachResult(id, resultData) {
+    const tasks = await this.getTasks();
+    const task = tasks.find(t => t.id === id);
+    if (task) {
+      task.result = resultData;
+      localStorage.setItem(this.storageKey, JSON.stringify(tasks));
+      return task;
+    }
+    return null;
+  }
+
+  async deleteTask(id) {
+    const tasks = await this.getTasks();
+    const filtered = tasks.filter(t => t.id !== id);
+    localStorage.setItem(this.storageKey, JSON.stringify(filtered));
+    return true;
+  }
+
+  async getDirectives() {
+    try {
+      const saved = localStorage.getItem(this.directivesKey);
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      console.warn("Failed to load directives:", e);
+    }
+    return JSON.parse(JSON.stringify(DEFAULT_DIRECTIVES));
+  }
+
+  async saveDirective(directive) {
+    const directives = await this.getDirectives();
+    const idx = directives.findIndex(d => d.id === directive.id);
+    if (idx !== -1) {
+      directives[idx] = directive;
+    } else {
+      directives.unshift(directive);
+    }
+    localStorage.setItem(this.directivesKey, JSON.stringify(directives));
+    return directive;
+  }
+
+  async getApprovals() {
+    const tasks = await this.getTasks();
+    return tasks.filter(t => t.status === "approval_pending" || (t.door === "one_way" && t.status === "review"));
+  }
+
+  async approveOneWayTask(taskId, notes = "") {
+    const tasks = await this.getTasks();
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return false;
+
+    task.status = "done";
+    const ts = new Date().toLocaleTimeString();
+    if (!task.result) {
+      task.result = { status: "success", exitCode: 0, duration: "1.2s", summary: "One-Way Action Authorized by Chairman", logs: [] };
+    } else {
+      task.result.status = "success";
+      task.result.exitCode = 0;
+      task.result.summary = "One-Way Action Authorized: Executed cleanly.";
+    }
+
+    task.result.logs = task.result.logs || [];
+    task.result.logs.push(`[${ts}] [CHAIRMAN SIGN-OFF] Authorized by Chairman.`);
+    if (notes) task.result.logs.push(`[${ts}] [CHAIRMAN NOTES] ${notes}`);
+    task.result.logs.push(`[${ts}] [SUCCESS] One-Way action completed.`);
+
+    localStorage.setItem(this.storageKey, JSON.stringify(tasks));
+    return true;
+  }
+
+  async rejectOneWayTask(taskId, reason = "Rejected by Chairman") {
+    const tasks = await this.getTasks();
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return false;
+
+    task.status = "failed";
+    const ts = new Date().toLocaleTimeString();
+    task.result = task.result || { logs: [] };
+    task.result.status = "failure";
+    task.result.exitCode = 1;
+    task.result.summary = `Aborted by Chairman: ${reason}`;
+    task.result.logs = task.result.logs || [];
+    task.result.logs.push(`[${ts}] [CHAIRMAN REJECTION] ${reason}`);
+
+    localStorage.setItem(this.storageKey, JSON.stringify(tasks));
+    return true;
+  }
+
+  async reviseOneWayTask(taskId, feedback = "Revision requested") {
+    const tasks = await this.getTasks();
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return false;
+
+    task.status = "running";
+    const ts = new Date().toLocaleTimeString();
+    task.result = task.result || { logs: [] };
+    task.result.status = "running";
+    task.result.summary = `Revising work based on Chairman guidance: ${feedback}`;
+    task.result.logs = task.result.logs || [];
+    task.result.logs.push(`[${ts}] [CHAIRMAN REVISION GUIDANCE] ${feedback}`);
+
+    localStorage.setItem(this.storageKey, JSON.stringify(tasks));
+    return true;
+  }
+}
+
+/**
+ * SupabaseAdapter
+ * Live Cloud adapter querying PostgreSQL tables via Supabase JS SDK + Realtime WebSockets.
+ */
+class SupabaseAdapter extends StorageAdapter {
+  constructor(url, anonKey) {
+    super();
+    this.url = url;
+    this.anonKey = anonKey;
+    this.client = null;
+    this.channel = null;
+
+    if (window.supabase && url && anonKey) {
+      try {
+        this.client = window.supabase.createClient(url, anonKey);
+      } catch (e) {
+        console.error("Failed to initialize Supabase client:", e);
+      }
+    }
+  }
+
+  isReady() {
+    return Boolean(this.client);
+  }
+
+  // Model mappers
+  taskToRow(task) {
+    return {
+      id: task.id,
+      title: task.title,
+      description: task.description || "",
+      door: task.door || "two_way",
+      owner_agent: task.ownerAgent || "cto",
+      worker: task.worker || "CTO Agent",
+      directive_id: task.directiveId || null,
+      priority: task.priority || "medium",
+      status: task.status || "backlog",
+      tags: task.tags || [],
+      acceptance_criteria: task.acceptanceCriteria || [],
+      payload: task.payload || {},
+      tokens_used: task.tokensUsed || 0,
+      cost_usd: task.costUsd || 0.00
+    };
+  }
+
+  rowToTask(row, runs = []) {
+    const latestRun = runs.length > 0 ? runs[0] : null;
+    let result = null;
+    if (latestRun) {
+      result = {
+        status: latestRun.exit_code === 0 ? "success" : (latestRun.exit_code === null ? "running" : "failure"),
+        exitCode: latestRun.exit_code ?? "—",
+        duration: latestRun.duration || "—",
+        summary: latestRun.summary || "Run completed",
+        data: latestRun.result || {},
+        logs: (latestRun.run_logs || []).map(l => `[${new Date(l.ts).toLocaleTimeString()}] [${(l.level || "INFO").toUpperCase()}] ${l.message}`),
+        links: []
+      };
+    }
+
+    return {
+      id: row.id,
+      title: row.title,
+      description: row.description || "",
+      status: row.status,
+      door: row.door,
+      ownerAgent: row.owner_agent,
+      worker: row.worker,
+      directiveId: row.directive_id,
+      priority: row.priority,
+      tags: row.tags || [],
+      acceptanceCriteria: row.acceptance_criteria || [],
+      tokensUsed: row.tokens_used || 0,
+      costUsd: parseFloat(row.cost_usd) || 0.00,
+      createdAt: row.created_at ? new Date(row.created_at).toISOString().replace("T", " ").substring(0, 16) : "",
+      payload: row.payload || {},
+      result
+    };
+  }
+
+  async testConnection() {
+    if (!this.client) return false;
+    try {
+      const { data, error } = await this.client.from("agents").select("id").limit(1);
+      return !error;
+    } catch {
+      return false;
+    }
+  }
+
+  async getTasks() {
+    if (!this.client) return [];
+    const { data, error } = await this.client
+      .from("tasks")
+      .select("*, runs(*, run_logs(*))")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Supabase getTasks error:", error);
+      return [];
+    }
+
+    return (data || []).map(row => this.rowToTask(row, row.runs || []));
+  }
+
+  async saveTask(task) {
+    if (!this.client) return task;
+    const row = this.taskToRow(task);
+    const { error } = await this.client.from("tasks").upsert(row);
+    if (error) console.error("Supabase saveTask error:", error);
+    return task;
+  }
+
+  async updateTaskStatus(id, newStatus) {
+    if (!this.client) return null;
+    const { error } = await this.client.from("tasks").update({ status: newStatus }).eq("id", id);
+    if (error) console.error("Supabase updateTaskStatus error:", error);
+    return { id, status: newStatus };
+  }
+
+  async attachResult(id, resultData) {
+    if (!this.client) return null;
+    // 1. Insert run row
+    const { data: run, error: runError } = await this.client
+      .from("runs")
+      .insert({
+        task_id: id,
+        agent_id: "agent-runner",
+        exit_code: resultData.exitCode === "—" ? null : resultData.exitCode,
+        duration: resultData.duration,
+        summary: resultData.summary,
+        result: resultData.data || {}
+      })
+      .select()
+      .single();
+
+    if (!runError && run) {
+      // 2. Insert log lines
+      if (resultData.logs && resultData.logs.length > 0) {
+        const logRows = resultData.logs.map(msg => ({
+          run_id: run.id,
+          task_id: id,
+          level: msg.includes("[ERROR]") ? "error" : (msg.includes("[WARN]") ? "warn" : "info"),
+          message: msg
+        }));
+        await this.client.from("run_logs").insert(logRows);
+      }
+    }
+    return resultData;
+  }
+
+  async deleteTask(id) {
+    if (!this.client) return false;
+    const { error } = await this.client.from("tasks").delete().eq("id", id);
+    return !error;
+  }
+
+  async getDirectives() {
+    if (!this.client) return [];
+    const { data, error } = await this.client
+      .from("directives")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Supabase getDirectives error:", error);
+      return [];
+    }
+
+    return (data || []).map(row => ({
+      id: row.id,
+      title: row.text,
+      status: row.status,
+      priority: row.priority,
+      budgetAllocated: row.budget_allocated || "$5.00",
+      tokensUsed: row.tokens_used || 0,
+      costUsd: parseFloat(row.cost_usd) || 0.00,
+      context: row.text,
+      childTaskIds: [],
+      ceoReport: row.report || "",
+      createdAt: row.created_at ? new Date(row.created_at).toISOString().replace("T", " ").substring(0, 16) : ""
+    }));
+  }
+
+  async saveDirective(directive) {
+    if (!this.client) return directive;
+    const { error } = await this.client.from("directives").upsert({
+      id: directive.id,
+      text: directive.title,
+      status: directive.status,
+      priority: directive.priority,
+      budget_allocated: directive.budgetAllocated,
+      report: directive.ceoReport
+    });
+    if (error) console.error("Supabase saveDirective error:", error);
+    return directive;
+  }
+
+  async getApprovals() {
+    const tasks = await this.getTasks();
+    return tasks.filter(t => t.status === "approval_pending" || (t.door === "one_way" && t.status === "review"));
+  }
+
+  async approveOneWayTask(taskId, notes = "") {
+    if (!this.client) return false;
+    await this.updateTaskStatus(taskId, "done");
+    await this.client.from("approvals").insert({
+      task_id: taskId,
+      requested_by: "CTO Agent",
+      action: "One-Way Door Authorized",
+      decision: "approved",
+      decided_at: new Date().toISOString(),
+      note: notes
+    });
+    return true;
+  }
+
+  async rejectOneWayTask(taskId, reason = "Rejected by Chairman") {
+    if (!this.client) return false;
+    await this.updateTaskStatus(taskId, "failed");
+    await this.client.from("approvals").insert({
+      task_id: taskId,
+      requested_by: "CTO Agent",
+      action: "One-Way Door Rejected",
+      decision: "rejected",
+      decided_at: new Date().toISOString(),
+      note: reason
+    });
+    return true;
+  }
+
+  async reviseOneWayTask(taskId, feedback = "Revision requested") {
+    if (!this.client) return false;
+    await this.updateTaskStatus(taskId, "running");
+    await this.client.from("approvals").insert({
+      task_id: taskId,
+      requested_by: "CTO Agent",
+      action: "Revision Requested",
+      decision: "revision_requested",
+      decided_at: new Date().toISOString(),
+      note: feedback
+    });
+    return true;
+  }
+
+  subscribeToChanges(onTaskChange, onLogInsert) {
+    if (!this.client) return;
+    this.unsubscribe();
+
+    this.channel = this.client
+      .channel("cockpit-realtime-sync")
+      .on("postgres_changes", { event: "*", schema: "public", table: "tasks" }, payload => {
+        if (onTaskChange) onTaskChange(payload);
+      })
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "run_logs" }, payload => {
+        if (onLogInsert) onLogInsert(payload.new);
+      })
+      .subscribe();
+  }
+
+  unsubscribe() {
+    if (this.channel && this.client) {
+      this.client.removeChannel(this.channel);
+      this.channel = null;
+    }
+  }
+}
+
+// ============================================================================
+// Application State Manager
+// ============================================================================
+class TaskManager {
+  constructor() {
+    this.storageMode = localStorage.getItem("agentic_company_storage_mode") || "local";
+    this.supabaseUrl = localStorage.getItem("agentic_company_supabase_url") || "";
+    this.supabaseAnonKey = localStorage.getItem("agentic_company_supabase_anon_key") || "";
+    this.chairmanPin = localStorage.getItem("agentic_company_chairman_pin") || "1234";
+
+    this.localStorageAdapter = new LocalStorageAdapter();
+    this.supabaseAdapter = new SupabaseAdapter(this.supabaseUrl, this.supabaseAnonKey);
+    this.storageAdapter = this.storageMode === "supabase" && this.supabaseAdapter.isReady()
+      ? this.supabaseAdapter
+      : this.localStorageAdapter;
+
+    this.tasks = [];
+    this.directives = [];
     this.agents = AGENT_ROSTER;
 
     this.activeTaskId = null;
-    this.currentView = "kanban"; // "kanban", "approvals", "directives", "agents", "table"
+    this.currentView = "kanban";
     this.searchQuery = "";
     this.killSwitchActive = false;
 
@@ -406,60 +866,60 @@ class TaskManager {
     };
   }
 
-  loadTasks() {
-    try {
-      // Check modern storage key first
-      let saved = localStorage.getItem(this.storageKey);
-      if (saved) {
-        return JSON.parse(saved);
+  async init() {
+    await this.loadAllData();
+    this.setupRealtimeListeners();
+  }
+
+  setupRealtimeListeners() {
+    if (this.storageAdapter.subscribeToChanges) {
+      this.storageAdapter.subscribeToChanges(
+        () => {
+          this.loadAllData().then(() => renderAll());
+        },
+        logRow => {
+          if (this.activeTaskId && logRow.task_id === this.activeTaskId) {
+            appendSingleTerminalLog(logRow);
+          }
+        }
+      );
+    }
+  }
+
+  async loadAllData() {
+    this.tasks = await this.storageAdapter.getTasks();
+    this.directives = await this.storageAdapter.getDirectives();
+  }
+
+  async switchStorageMode(newMode) {
+    if (newMode === "supabase") {
+      this.supabaseAdapter = new SupabaseAdapter(this.supabaseUrl, this.supabaseAnonKey);
+      const ok = await this.supabaseAdapter.testConnection();
+      if (!ok) {
+        showToast("Cannot connect to Supabase: Please check your Project URL and Anon Key.", "danger");
+        return false;
       }
-
-      // Check and migrate legacy WorkerFlow key
-      const legacySaved = localStorage.getItem(this.legacyKey);
-      if (legacySaved) {
-        const parsed = JSON.parse(legacySaved);
-        // Persist into modern key without deleting user work
-        localStorage.setItem(this.storageKey, JSON.stringify(parsed));
-        return parsed;
-      }
-    } catch (e) {
-      console.warn("Failed to parse stored tasks, falling back to corporate defaults.", e);
+      this.storageAdapter = this.supabaseAdapter;
+      this.storageMode = "supabase";
+    } else {
+      this.storageAdapter = this.localStorageAdapter;
+      this.storageMode = "local";
     }
-    return JSON.parse(JSON.stringify(DEFAULT_TASKS));
+
+    localStorage.setItem("agentic_company_storage_mode", this.storageMode);
+    await this.loadAllData();
+    this.setupRealtimeListeners();
+    renderAll();
+    return true;
   }
 
-  saveTasks() {
-    try {
-      localStorage.setItem(this.storageKey, JSON.stringify(this.tasks));
-    } catch (e) {
-      console.error("Failed to save tasks to localStorage:", e);
+  async resetToDefault() {
+    if (this.storageMode === "local") {
+      localStorage.setItem("agentic_company_tasks_v1", JSON.stringify(DEFAULT_TASKS));
+      localStorage.setItem("agentic_company_directives_v1", JSON.stringify(DEFAULT_DIRECTIVES));
     }
-  }
-
-  loadDirectives() {
-    try {
-      const saved = localStorage.getItem(this.directivesKey);
-      if (saved) return JSON.parse(saved);
-    } catch (e) {
-      console.warn("Failed to load directives, falling back to default.", e);
-    }
-    return JSON.parse(JSON.stringify(DEFAULT_DIRECTIVES));
-  }
-
-  saveDirectives() {
-    try {
-      localStorage.setItem(this.directivesKey, JSON.stringify(this.directives));
-    } catch (e) {
-      console.error("Failed to save directives to localStorage:", e);
-    }
-  }
-
-  resetToDefault() {
-    this.tasks = JSON.parse(JSON.stringify(DEFAULT_TASKS));
-    this.directives = JSON.parse(JSON.stringify(DEFAULT_DIRECTIVES));
     this.killSwitchActive = false;
-    this.saveTasks();
-    this.saveDirectives();
+    await this.loadAllData();
   }
 
   getAllTasks() {
@@ -468,7 +928,6 @@ class TaskManager {
 
   getFilteredTasks() {
     return this.tasks.filter(task => {
-      // Search query
       if (this.searchQuery) {
         const q = this.searchQuery.toLowerCase();
         const matchesTitle = task.title.toLowerCase().includes(q);
@@ -486,25 +945,14 @@ class TaskManager {
         }
       }
 
-      // Priority filter
-      if (this.filters.priority !== "all" && task.priority !== this.filters.priority) {
-        return false;
-      }
+      if (this.filters.priority !== "all" && task.priority !== this.filters.priority) return false;
+      if (this.filters.door !== "all" && (task.door || "two_way") !== this.filters.door) return false;
 
-      // Door filter
-      if (this.filters.door !== "all" && (task.door || "two_way") !== this.filters.door) {
-        return false;
-      }
-
-      // Assigned Agent/Worker filter
       if (this.filters.worker !== "all") {
         const taskAgent = (task.ownerAgent || task.worker || "").toLowerCase();
-        if (!taskAgent.includes(this.filters.worker.toLowerCase())) {
-          return false;
-        }
+        if (!taskAgent.includes(this.filters.worker.toLowerCase())) return false;
       }
 
-      // Result status filter
       if (this.filters.result === "with-results" && !task.result) return false;
       if (this.filters.result === "no-results" && task.result) return false;
       if (this.filters.result === "success-results" && (!task.result || task.result.status !== "success")) return false;
@@ -518,7 +966,7 @@ class TaskManager {
     return this.tasks.find(t => t.id === id);
   }
 
-  addTask(taskData) {
+  async addTask(taskData) {
     const nextNum = this.tasks.length + 101;
     const newTask = {
       id: `TASK-${nextNum}`,
@@ -538,51 +986,47 @@ class TaskManager {
       payload: taskData.payload || {},
       result: null
     };
+
+    await this.storageAdapter.saveTask(newTask);
     this.tasks.unshift(newTask);
-    this.saveTasks();
     return newTask;
   }
 
-  updateTask(id, updates) {
+  async updateTask(id, updates) {
     const task = this.getTaskById(id);
     if (!task) return null;
     Object.assign(task, updates);
-    this.saveTasks();
+    await this.storageAdapter.saveTask(task);
     return task;
   }
 
-  updateTaskStatus(id, newStatus) {
+  async updateTaskStatus(id, newStatus) {
     const task = this.getTaskById(id);
     if (!task) return null;
     task.status = newStatus;
-    this.saveTasks();
+    await this.storageAdapter.updateTaskStatus(id, newStatus);
     return task;
   }
 
-  attachResult(id, resultData) {
+  async attachResult(id, resultData) {
     const task = this.getTaskById(id);
     if (!task) return null;
     task.result = resultData;
-    this.saveTasks();
+    await this.storageAdapter.attachResult(id, resultData);
     return task;
   }
 
-  deleteTask(id) {
-    const idx = this.tasks.findIndex(t => t.id === id);
-    if (idx !== -1) {
-      this.tasks.splice(idx, 1);
-      this.saveTasks();
-      return true;
-    }
-    return false;
+  async deleteTask(id) {
+    await this.storageAdapter.deleteTask(id);
+    this.tasks = this.tasks.filter(t => t.id !== id);
+    return true;
   }
 
-  // Directives methods
   getDirectives() {
     return this.directives;
   }
 
-  addDirective(dirData) {
+  async addDirective(dirData) {
     const nextId = `DIR-${this.directives.length + 1}`;
     const newDir = {
       id: nextId,
@@ -597,89 +1041,47 @@ class TaskManager {
       childTaskIds: [],
       ceoReport: "CEO Note: Directive received from Chairman. Currently analyzing technical requirements and preparing CTO task decomposition."
     };
+    await this.storageAdapter.saveDirective(newDir);
     this.directives.unshift(newDir);
-    this.saveDirectives();
     return newDir;
   }
 
-  // Approvals Desk
   getApprovals() {
     return this.tasks.filter(t => t.status === "approval_pending" || (t.door === "one_way" && t.status === "review"));
   }
 
-  approveOneWayTask(taskId, chairmanNotes = "") {
-    const task = this.getTaskById(taskId);
-    if (!task) return false;
-
-    task.status = "done";
-    const ts = new Date().toLocaleTimeString();
-    if (!task.result) {
-      task.result = {
-        status: "success",
-        exitCode: 0,
-        duration: "1.2s",
-        summary: "One-Way Door Authorized & Executed by Chairman",
-        logs: []
-      };
-    } else {
-      task.result.status = "success";
-      task.result.exitCode = 0;
-      task.result.summary = "One-Way Door Authorized: Action executed cleanly.";
+  async approveOneWayTask(taskId, chairmanNotes = "") {
+    const success = await this.storageAdapter.approveOneWayTask(taskId, chairmanNotes);
+    if (success) {
+      const task = this.getTaskById(taskId);
+      if (task) task.status = "done";
     }
-
-    task.result.logs = task.result.logs || [];
-    task.result.logs.push(`[${ts}] [CHAIRMAN SIGN-OFF] Authorized by Chairman.`);
-    if (chairmanNotes) {
-      task.result.logs.push(`[${ts}] [CHAIRMAN NOTES] ${chairmanNotes}`);
-    }
-    task.result.logs.push(`[${ts}] [SUCCESS] Task completed. Action merged/dispatched.`);
-
-    this.saveTasks();
-    return true;
+    return success;
   }
 
-  rejectOneWayTask(taskId, reason = "Rejected by Chairman") {
-    const task = this.getTaskById(taskId);
-    if (!task) return false;
-
-    task.status = "failed";
-    const ts = new Date().toLocaleTimeString();
-    if (!task.result) {
-      task.result = { status: "failure", exitCode: 1, duration: "—", summary: "Rejected by Chairman", logs: [] };
+  async rejectOneWayTask(taskId, reason = "Rejected by Chairman") {
+    const success = await this.storageAdapter.rejectOneWayTask(taskId, reason);
+    if (success) {
+      const task = this.getTaskById(taskId);
+      if (task) task.status = "failed";
     }
-    task.result.status = "failure";
-    task.result.exitCode = 1;
-    task.result.summary = `Aborted by Chairman: ${reason}`;
-    task.result.logs = task.result.logs || [];
-    task.result.logs.push(`[${ts}] [CHAIRMAN REJECTION] ${reason}`);
-
-    this.saveTasks();
-    return true;
+    return success;
   }
 
-  reviseOneWayTask(taskId, feedback = "Revision requested") {
-    const task = this.getTaskById(taskId);
-    if (!task) return false;
-
-    task.status = "running";
-    const ts = new Date().toLocaleTimeString();
-    task.result = task.result || { logs: [] };
-    task.result.status = "running";
-    task.result.summary = `Revising work based on Chairman guidance: ${feedback}`;
-    task.result.logs = task.result.logs || [];
-    task.result.logs.push(`[${ts}] [CHAIRMAN REVISION GUIDANCE] ${feedback}`);
-
-    this.saveTasks();
-    return true;
+  async reviseOneWayTask(taskId, feedback = "Revision requested") {
+    const success = await this.storageAdapter.reviseOneWayTask(taskId, feedback);
+    if (success) {
+      const task = this.getTaskById(taskId);
+      if (task) task.status = "running";
+    }
+    return success;
   }
 
-  // Kill Switch
   toggleKillSwitch() {
     this.killSwitchActive = !this.killSwitchActive;
     return this.killSwitchActive;
   }
 
-  // Metrics calculation
   getMetrics() {
     const total = this.tasks.length;
     const running = this.tasks.filter(t => t.status === "running").length;
@@ -716,13 +1118,12 @@ class TaskManager {
       const w = t.worker || (t.ownerAgent ? t.ownerAgent.toUpperCase() : null);
       if (w) workers.add(w);
     });
-    // Add registered agent names
     this.agents.forEach(a => workers.add(a.name));
     return Array.from(workers);
   }
 }
 
-// Instantiate state manager
+// Global state instance
 const appState = new TaskManager();
 
 // ============================================================================
@@ -738,6 +1139,11 @@ const dom = {
   metricCost: document.getElementById("metricCost"),
   metricCeiling: document.getElementById("metricCeiling"),
   pillApproval: document.getElementById("pillApproval"),
+
+  // Storage Mode Controls
+  btnStorageMode: document.getElementById("btnStorageMode"),
+  modeDot: document.getElementById("modeDot"),
+  modeLabel: document.getElementById("modeLabel"),
 
   // Header Actions
   btnKillSwitch: document.getElementById("btnKillSwitch"),
@@ -864,6 +1270,29 @@ const dom = {
   btnReviseApproval: document.getElementById("btnReviseApproval"),
   btnApproveAction: document.getElementById("btnApproveAction"),
 
+  // Supabase Config Dialog
+  supabaseConfigModal: document.getElementById("supabaseConfigModal"),
+  supabaseConfigForm: document.getElementById("supabaseConfigForm"),
+  radioModeLocal: document.getElementById("radioModeLocal"),
+  radioModeSupabase: document.getElementById("radioModeSupabase"),
+  inputSupabaseUrl: document.getElementById("inputSupabaseUrl"),
+  inputSupabaseAnonKey: document.getElementById("inputSupabaseAnonKey"),
+  connStatusDot: document.getElementById("connStatusDot"),
+  connStatusText: document.getElementById("connStatusText"),
+  btnTestSupabaseConn: document.getElementById("btnTestSupabaseConn"),
+  btnCloseSupabaseModal: document.getElementById("btnCloseSupabaseModal"),
+  btnCancelSupabaseModal: document.getElementById("btnCancelSupabaseModal"),
+
+  // PIN Gate Dialog
+  pinGateModal: document.getElementById("pinGateModal"),
+  pinPromptText: document.getElementById("pinPromptText"),
+  inputChairmanPin: document.getElementById("inputChairmanPin"),
+  btnClosePinModal: document.getElementById("btnClosePinModal"),
+  btnCancelPinModal: document.getElementById("btnCancelPinModal"),
+  btnSubmitPin: document.getElementById("btnSubmitPin"),
+  btnPinClear: document.getElementById("btnPinClear"),
+  btnPinBackspace: document.getElementById("btnPinBackspace"),
+
   // Result & Link Dialogs
   resultModal: document.getElementById("resultModal"),
   resultForm: document.getElementById("resultForm"),
@@ -887,8 +1316,8 @@ const dom = {
   toastContainer: document.getElementById("toastContainer")
 };
 
-// Current pending task in approval modal
 let currentApprovalTaskId = null;
+let pinResolver = null;
 
 // ============================================================================
 // Helper Utilities
@@ -919,6 +1348,25 @@ function showToast(message, type = "info") {
   }, 4200);
 }
 
+// Chairman PIN Security Gate
+function promptChairmanPin(actionDescription = "authorize this action") {
+  return new Promise(resolve => {
+    pinResolver = resolve;
+    dom.pinPromptText.textContent = `Enter Chairman 4-digit PIN to ${actionDescription}:`;
+    dom.inputChairmanPin.value = "";
+    dom.pinGateModal.showModal();
+    dom.inputChairmanPin.focus();
+  });
+}
+
+function closePinGate(success = false) {
+  dom.pinGateModal.close();
+  if (pinResolver) {
+    pinResolver(success);
+    pinResolver = null;
+  }
+}
+
 // ============================================================================
 // UI Renderers
 // ============================================================================
@@ -929,20 +1377,26 @@ function renderMetrics() {
   dom.metricApproval.textContent = m.approvals;
   dom.metricSuccess.textContent = m.done;
 
-  // Format tokens and cost
   const kTokens = (m.tokens / 1000).toFixed(1);
   dom.metricTokens.textContent = `${kTokens}k`;
   dom.metricCost.textContent = `$${m.cost.toFixed(2)}`;
 
-  // Approvals badge in view button
   if (dom.badgeApprovalsCount) {
     dom.badgeApprovalsCount.textContent = m.approvals;
     dom.badgeApprovalsCount.style.display = m.approvals > 0 ? "inline-block" : "none";
   }
 
-  // Approvals desk counter
   if (dom.approvalsDeskCount) {
     dom.approvalsDeskCount.textContent = m.approvals;
+  }
+
+  // Storage mode pill in header
+  if (appState.storageMode === "supabase") {
+    dom.modeDot.className = "mode-dot live";
+    dom.modeLabel.textContent = "Supabase Live 🌐";
+  } else {
+    dom.modeDot.className = "mode-dot local";
+    dom.modeLabel.textContent = "Local Mock ⚡";
   }
 }
 
@@ -964,7 +1418,6 @@ function updateWorkerFilterOptions() {
 }
 
 function renderKanban() {
-  // Clear columns
   Object.values(dom.colCards).forEach(el => {
     if (el) el.innerHTML = "";
   });
@@ -991,7 +1444,6 @@ function renderKanban() {
     }
   });
 
-  // Update counters
   Object.keys(columnCounts).forEach(status => {
     if (dom.colCounts[status]) {
       dom.colCounts[status].textContent = columnCounts[status];
@@ -1010,17 +1462,14 @@ function createTaskCardElement(task) {
     card.classList.add("card-one-way-pending");
   }
 
-  // HTML5 Drag listeners
   card.addEventListener("dragstart", handleDragStart);
   card.addEventListener("dragend", handleDragEnd);
 
-  // Door badge
   const isOneWay = (task.door === "one_way");
   const doorBadgeHtml = isOneWay
     ? `<span class="badge-one-way" title="Irreversible: Requires Chairman sign-off">⚠️ 1-Way Gate</span>`
     : `<span class="badge-two-way" title="Reversible: Autonomous execution">⚡ 2-Way</span>`;
 
-  // Result Badge / Hook
   let resultBoxHtml = "";
   if (task.result) {
     const resStatus = task.result.status || "none";
@@ -1062,12 +1511,10 @@ function createTaskCardElement(task) {
     `;
   }
 
-  // Tags
   const tagsHtml = (task.tags || [])
     .map(t => `<span class="tag-pill">#${escapeHtml(t)}</span>`)
     .join("");
 
-  // Agent name
   const agentDisplayName = task.worker || (task.ownerAgent ? task.ownerAgent.toUpperCase() : "CTO Agent");
 
   card.innerHTML = `
@@ -1116,7 +1563,6 @@ function createTaskCardElement(task) {
     </div>
   `;
 
-  // Card click actions
   card.addEventListener("click", e => {
     const actionEl = e.target.closest("[data-action]");
     if (actionEl) {
@@ -1213,9 +1659,6 @@ function renderTableView() {
   });
 }
 
-// ============================================================================
-// Directives Desk Renderer (Boardroom)
-// ============================================================================
 function renderDirectives() {
   if (!dom.directivesGrid) return;
   dom.directivesGrid.innerHTML = "";
@@ -1234,7 +1677,6 @@ function renderDirectives() {
     const card = document.createElement("div");
     card.className = "directive-card";
 
-    // Calculate subtask completion
     const allTasks = appState.getAllTasks();
     const childTasks = allTasks.filter(t => dir.childTaskIds && dir.childTaskIds.includes(t.id));
     const doneCount = childTasks.filter(t => t.status === "done").length;
@@ -1283,9 +1725,6 @@ function renderDirectives() {
   });
 }
 
-// ============================================================================
-// Approvals Desk Renderer (One-Way Doors Dedicated Queue)
-// ============================================================================
 function renderApprovalsDesk() {
   if (!dom.approvalsDeskGrid) return;
   dom.approvalsDeskGrid.innerHTML = "";
@@ -1341,9 +1780,6 @@ function renderApprovalsDesk() {
   });
 }
 
-// ============================================================================
-// Agent Roster Renderer (Org Topology)
-// ============================================================================
 function renderAgentRoster() {
   if (!dom.agentsGrid) return;
   dom.agentsGrid.innerHTML = "";
@@ -1401,14 +1837,12 @@ function renderAll() {
   renderMetrics();
   updateWorkerFilterOptions();
 
-  // Hide all sections first
   dom.kanbanBoard.classList.add("hidden");
   dom.tableViewContainer.classList.add("hidden");
   dom.approvalsSection.classList.add("hidden");
   dom.directivesSection.classList.add("hidden");
   dom.agentsSection.classList.add("hidden");
 
-  // Show active view
   if (appState.currentView === "kanban") {
     dom.kanbanBoard.classList.remove("hidden");
     renderKanban();
@@ -1448,7 +1882,6 @@ function openApprovalModal(taskId) {
     dom.approvalBlastRadiusDesc.textContent = "This action modifies external state, merges code to production, or spends funds. Execution is paused.";
   }
 
-  // Acceptance criteria list
   dom.approvalCriteriaList.innerHTML = "";
   const criteria = task.acceptanceCriteria || [
     "Reviewer Agent verified against security standards",
@@ -1466,7 +1899,6 @@ function openApprovalModal(taskId) {
     dom.approvalCriteriaList.appendChild(div);
   });
 
-  // Diff / Payload preview
   const payloadStr = JSON.stringify(task.payload || task.result || {}, null, 2);
   dom.approvalPayloadDiff.textContent = payloadStr;
   dom.inputApprovalNotes.value = "";
@@ -1485,12 +1917,12 @@ function openDirectiveModal() {
   dom.directiveModal.showModal();
 }
 
-function handleDirectiveFormSubmit(e) {
+async function handleDirectiveFormSubmit(e) {
   e.preventDefault();
   const title = dom.inputDirectiveTitle.value.trim();
   if (!title) return;
 
-  const newDir = appState.addDirective({
+  const newDir = await appState.addDirective({
     title,
     priority: dom.selectDirectivePriority.value,
     budgetAllocated: dom.inputDirectiveBudget.value.trim() || "$5.00",
@@ -1499,9 +1931,8 @@ function handleDirectiveFormSubmit(e) {
 
   dom.directiveModal.close();
 
-  // Simulate CEO breaking it down into 2 initial tasks
-  setTimeout(() => {
-    const taskA = appState.addTask({
+  setTimeout(async () => {
+    const taskA = await appState.addTask({
       title: `Plan & Spec: ${title}`,
       description: `CEO & CTO technical decomposition for directive ${newDir.id}`,
       door: "two_way",
@@ -1512,7 +1943,7 @@ function handleDirectiveFormSubmit(e) {
       tags: ["spec", "architecture"]
     });
     newDir.childTaskIds.push(taskA.id);
-    appState.saveDirectives();
+    await appState.storageAdapter.saveDirective(newDir);
     renderAll();
     showToast(`CEO Agent processed ${newDir.id} and created ${taskA.id}`, "success");
   }, 1200);
@@ -1530,14 +1961,12 @@ function openResultsDrawer(taskId) {
 
   appState.activeTaskId = taskId;
 
-  // Header info
   dom.drawerTaskId.textContent = task.id;
   dom.drawerTaskTitle.textContent = task.title;
   dom.drawerTaskDesc.textContent = task.description || "No description provided.";
   dom.drawerStatusPill.textContent = task.status;
   dom.drawerStatusPill.className = `status-pill status-${task.status}`;
 
-  // Metrics and result
   if (task.result) {
     const resStatus = task.result.status || "none";
     dom.drawerResultBadge.textContent = resStatus.toUpperCase();
@@ -1567,11 +1996,9 @@ function openResultsDrawer(taskId) {
     renderResourceLinks([]);
   }
 
-  // Parameters
   const payloadStr = JSON.stringify(task.payload || {}, null, 2);
   dom.taskPayloadContent.textContent = payloadStr;
 
-  // Open drawer
   dom.drawer.classList.add("open");
   dom.drawerBackdrop.classList.add("open");
 }
@@ -1606,6 +2033,16 @@ function renderTerminalLogs(logs) {
   dom.terminalLogs.scrollTop = dom.terminalLogs.scrollHeight;
 }
 
+function appendSingleTerminalLog(logRow) {
+  const el = document.createElement("div");
+  el.className = "terminal-line";
+  const ts = new Date(logRow.ts).toLocaleTimeString();
+  const lvl = (logRow.level || "info").toUpperCase();
+  el.innerHTML = `<span class="log-${logRow.level}">[${ts}] [${lvl}] ${escapeHtml(logRow.message)}</span>`;
+  dom.terminalLogs.appendChild(el);
+  dom.terminalLogs.scrollTop = dom.terminalLogs.scrollHeight;
+}
+
 function renderResourceLinks(links) {
   dom.resourcesList.innerHTML = "";
   if (!links || links.length === 0) {
@@ -1634,7 +2071,6 @@ function openTaskModal(taskId = null, defaultStatus = "backlog") {
   dom.taskForm.reset();
   dom.taskFormId.value = taskId || "";
 
-  // Populate directives dropdown
   dom.selectTaskDirective.innerHTML = '<option value="">None (Independent Task)</option>';
   appState.getDirectives().forEach(dir => {
     const opt = document.createElement("option");
@@ -1670,7 +2106,7 @@ function openTaskModal(taskId = null, defaultStatus = "backlog") {
   dom.taskModal.showModal();
 }
 
-function handleTaskFormSubmit(e) {
+async function handleTaskFormSubmit(e) {
   e.preventDefault();
   const id = dom.taskFormId.value;
   const title = dom.inputTaskTitle.value.trim();
@@ -1717,11 +2153,11 @@ function handleTaskFormSubmit(e) {
   };
 
   if (id) {
-    appState.updateTask(id, taskData);
+    await appState.updateTask(id, taskData);
     showToast(`Updated task ${id}`, "success");
     if (appState.activeTaskId === id) openResultsDrawer(id);
   } else {
-    const newTask = appState.addTask(taskData);
+    const newTask = await appState.addTask(taskData);
     showToast(`Created task ${newTask.id}`, "success");
   }
 
@@ -1754,7 +2190,7 @@ function openResultModal(taskId) {
   dom.resultModal.showModal();
 }
 
-function handleResultFormSubmit(e) {
+async function handleResultFormSubmit(e) {
   e.preventDefault();
   const id = dom.resultFormTaskId.value;
   if (!id) return;
@@ -1787,9 +2223,9 @@ function handleResultFormSubmit(e) {
     links: []
   };
 
-  appState.attachResult(id, resultData);
-  if (status === "success") appState.updateTaskStatus(id, "done");
-  if (status === "failure") appState.updateTaskStatus(id, "failed");
+  await appState.attachResult(id, resultData);
+  if (status === "success") await appState.updateTaskStatus(id, "done");
+  if (status === "failure") await appState.updateTaskStatus(id, "failed");
 
   dom.resultModal.close();
   renderAll();
@@ -1797,13 +2233,12 @@ function handleResultFormSubmit(e) {
   showToast(`Attached result to ${id}`, "success");
 }
 
-// Link Modal Logic
 function openLinkModal() {
   dom.linkForm.reset();
   dom.linkModal.showModal();
 }
 
-function handleLinkFormSubmit(e) {
+async function handleLinkFormSubmit(e) {
   e.preventDefault();
   const taskId = appState.activeTaskId;
   if (!taskId) return;
@@ -1827,7 +2262,7 @@ function handleLinkFormSubmit(e) {
 
   task.result.links = task.result.links || [];
   task.result.links.push({ label, url });
-  appState.saveTasks();
+  await appState.storageAdapter.saveTask(task);
 
   dom.linkModal.close();
   renderResourceLinks(task.result.links);
@@ -1837,7 +2272,7 @@ function handleLinkFormSubmit(e) {
 // ============================================================================
 // Multi-Agent Simulation Engine
 // ============================================================================
-function simulateWorkerRun(taskId) {
+async function simulateWorkerRun(taskId) {
   if (appState.killSwitchActive) {
     showToast("⚠️ Global Kill Switch Active: System is frozen. Deactivate to run.", "warning");
     return;
@@ -1846,14 +2281,14 @@ function simulateWorkerRun(taskId) {
   const task = appState.getTaskById(taskId);
   if (!task) return;
 
-  appState.updateTaskStatus(taskId, "running");
+  await appState.updateTaskStatus(taskId, "running");
   renderAll();
   showToast(`⚡ Dispatched ${task.id} to ${task.worker || "Agent"}...`, "info");
 
   const isOneWay = (task.door === "one_way");
-  const isFailChance = Math.random() < 0.15; // 15% random failure rate
+  const isFailChance = Math.random() < 0.15;
 
-  setTimeout(() => {
+  setTimeout(async () => {
     if (appState.killSwitchActive) {
       showToast(`Task ${taskId} halted mid-execution by Kill Switch.`, "warning");
       return;
@@ -1863,7 +2298,6 @@ function simulateWorkerRun(taskId) {
     const ts = new Date().toLocaleTimeString();
 
     if (isFailChance && !isOneWay) {
-      // Simulate failure
       task.status = "failed";
       task.tokensUsed = (task.tokensUsed || 0) + 4200;
       task.costUsd = (task.costUsd || 0) + 0.08;
@@ -1884,7 +2318,7 @@ function simulateWorkerRun(taskId) {
         ],
         links: []
       };
-      appState.saveTasks();
+      await appState.storageAdapter.saveTask(task);
       renderAll();
       showToast(`❌ Task ${taskId} failed verification`, "danger");
       if (appState.activeTaskId === taskId) openResultsDrawer(taskId);
@@ -1892,7 +2326,6 @@ function simulateWorkerRun(taskId) {
     }
 
     if (isOneWay) {
-      // One-Way Door: Complete implementation, then HALT at approval gate
       task.status = "approval_pending";
       task.tokensUsed = (task.tokensUsed || 0) + 12800;
       task.costUsd = (task.costUsd || 0) + 0.26;
@@ -1918,14 +2351,13 @@ function simulateWorkerRun(taskId) {
         ],
         links: []
       };
-      appState.saveTasks();
+      await appState.storageAdapter.saveTask(task);
       renderAll();
       showToast(`⚠️ Action halted: ${task.id} requires Chairman One-Way sign-off!`, "warning");
       if (appState.activeTaskId === taskId) openResultsDrawer(taskId);
       return;
     }
 
-    // Standard Two-Way Task: Completed autonomously
     task.status = "done";
     task.tokensUsed = (task.tokensUsed || 0) + 9400;
     task.costUsd = (task.costUsd || 0) + 0.19;
@@ -1949,7 +2381,7 @@ function simulateWorkerRun(taskId) {
       ],
       links: []
     };
-    appState.saveTasks();
+    await appState.storageAdapter.saveTask(task);
     renderAll();
     showToast(`✅ Finished task ${task.id} cleanly`, "success");
     if (appState.activeTaskId === taskId) openResultsDrawer(taskId);
@@ -2006,14 +2438,14 @@ function setupKanbanDropZones() {
       col.classList.remove("drag-over");
     });
 
-    col.addEventListener("drop", e => {
+    col.addEventListener("drop", async e => {
       e.preventDefault();
       col.classList.remove("drag-over");
       const targetStatus = col.dataset.status;
       if (draggedTaskId && targetStatus) {
         const task = appState.getTaskById(draggedTaskId);
         if (task && task.status !== targetStatus) {
-          appState.updateTaskStatus(draggedTaskId, targetStatus);
+          await appState.updateTaskStatus(draggedTaskId, targetStatus);
           renderAll();
           showToast(`Moved ${draggedTaskId} to ${targetStatus}`, "info");
         }
@@ -2023,9 +2455,125 @@ function setupKanbanDropZones() {
 }
 
 // ============================================================================
+// Cloud Settings & PIN Gate Event Listeners
+// ============================================================================
+function setupStorageAndSecurityListeners() {
+  // Open cloud settings
+  dom.btnStorageMode.addEventListener("click", () => {
+    dom.radioModeLocal.checked = appState.storageMode === "local";
+    dom.radioModeSupabase.checked = appState.storageMode === "supabase";
+    dom.inputSupabaseUrl.value = appState.supabaseUrl;
+    dom.inputSupabaseAnonKey.value = appState.supabaseAnonKey;
+
+    if (appState.storageMode === "supabase" && appState.supabaseAdapter.isReady()) {
+      dom.connStatusDot.className = "status-dot connected";
+      dom.connStatusText.textContent = "Status: Connected to Supabase Cloud";
+    } else {
+      dom.connStatusDot.className = "status-dot";
+      dom.connStatusText.textContent = "Status: Using Local Mock Storage";
+    }
+
+    dom.supabaseConfigModal.showModal();
+  });
+
+  dom.btnCloseSupabaseModal.addEventListener("click", () => dom.supabaseConfigModal.close());
+  dom.btnCancelSupabaseModal.addEventListener("click", () => dom.supabaseConfigModal.close());
+
+  // Test ping
+  dom.btnTestSupabaseConn.addEventListener("click", async () => {
+    const url = dom.inputSupabaseUrl.value.trim();
+    const key = dom.inputSupabaseAnonKey.value.trim();
+    if (!url || !key) {
+      showToast("Please provide both Supabase Project URL and Anon Key.", "warning");
+      return;
+    }
+
+    dom.connStatusText.textContent = "Status: Pinging database...";
+    const testAdapter = new SupabaseAdapter(url, key);
+    const ok = await testAdapter.testConnection();
+    if (ok) {
+      dom.connStatusDot.className = "status-dot connected";
+      dom.connStatusText.textContent = "Status: Connection Verified (Exit 0)";
+      showToast("Connected to Supabase PostgreSQL successfully!", "success");
+    } else {
+      dom.connStatusDot.className = "status-dot error";
+      dom.connStatusText.textContent = "Status: Connection Failed. Check credentials & RLS.";
+      showToast("Connection failed: Verify URL and Anon key.", "danger");
+    }
+  });
+
+  // Save settings form
+  dom.supabaseConfigForm.addEventListener("submit", async e => {
+    e.preventDefault();
+    const selectedMode = dom.radioModeSupabase.checked ? "supabase" : "local";
+    const url = dom.inputSupabaseUrl.value.trim();
+    const key = dom.inputSupabaseAnonKey.value.trim();
+
+    if (selectedMode === "supabase") {
+      if (!url || !key) {
+        showToast("Please provide Supabase Project URL and Anon Key.", "danger");
+        return;
+      }
+      appState.supabaseUrl = url;
+      appState.supabaseAnonKey = key;
+      localStorage.setItem("agentic_company_supabase_url", url);
+      localStorage.setItem("agentic_company_supabase_anon_key", key);
+
+      const switched = await appState.switchStorageMode("supabase");
+      if (switched) {
+        dom.supabaseConfigModal.close();
+        showToast("Switched to Supabase Live PostgreSQL Mode 🌐", "success");
+      }
+    } else {
+      await appState.switchStorageMode("local");
+      dom.supabaseConfigModal.close();
+      showToast("Switched to Local Mock Storage Mode ⚡", "info");
+    }
+  });
+
+  // Chairman PIN Keypad events
+  document.querySelectorAll(".pin-key[data-digit]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      if (dom.inputChairmanPin.value.length < 4) {
+        dom.inputChairmanPin.value += btn.dataset.digit;
+      }
+    });
+  });
+
+  dom.btnPinClear.addEventListener("click", () => {
+    dom.inputChairmanPin.value = "";
+  });
+
+  dom.btnPinBackspace.addEventListener("click", () => {
+    dom.inputChairmanPin.value = dom.inputChairmanPin.value.slice(0, -1);
+  });
+
+  dom.btnSubmitPin.addEventListener("click", () => {
+    const entered = dom.inputChairmanPin.value.trim();
+    if (entered === appState.chairmanPin) {
+      closePinGate(true);
+    } else {
+      dom.inputChairmanPin.value = "";
+      showToast("Incorrect Chairman PIN. Access Denied.", "danger");
+    }
+  });
+
+  dom.inputChairmanPin.addEventListener("keydown", e => {
+    if (e.key === "Enter") {
+      dom.btnSubmitPin.click();
+    }
+  });
+
+  dom.btnClosePinModal.addEventListener("click", () => closePinGate(false));
+  dom.btnCancelPinModal.addEventListener("click", () => closePinGate(false));
+}
+
+// ============================================================================
 // Event Listeners & Initialization
 // ============================================================================
 function setupEventListeners() {
+  setupStorageAndSecurityListeners();
+
   // Search & Filtering
   dom.searchInput.addEventListener("input", e => {
     appState.searchQuery = e.target.value.trim();
@@ -2126,7 +2674,7 @@ function setupEventListeners() {
   dom.btnSimulateAll.addEventListener("click", simulateRunAllQueued);
 
   // Kill Switch
-  dom.btnKillSwitch.addEventListener("click", () => {
+  dom.btnKillSwitch.addEventListener("click", async () => {
     const isFrozen = appState.toggleKillSwitch();
     if (isFrozen) {
       dom.btnKillSwitch.classList.add("active");
@@ -2140,8 +2688,8 @@ function setupEventListeners() {
   });
 
   // Reset Demo (uses showToast instead of browser confirm)
-  dom.btnResetDemo.addEventListener("click", () => {
-    appState.resetToDefault();
+  dom.btnResetDemo.addEventListener("click", async () => {
+    await appState.resetToDefault();
     renderAll();
     showToast("Dashboard reset to corporate demo baseline", "success");
   });
@@ -2182,11 +2730,11 @@ function setupEventListeners() {
     if (appState.activeTaskId) openResultModal(appState.activeTaskId);
   });
 
-  dom.btnDeleteTask.addEventListener("click", () => {
+  dom.btnDeleteTask.addEventListener("click", async () => {
     if (!appState.activeTaskId) return;
     const id = appState.activeTaskId;
     closeResultsDrawer();
-    appState.deleteTask(id);
+    await appState.deleteTask(id);
     renderAll();
     showToast(`Deleted task ${id}`, "danger");
   });
@@ -2228,29 +2776,37 @@ function setupEventListeners() {
   dom.btnCloseDirectiveModal.addEventListener("click", () => dom.directiveModal.close());
   dom.btnCancelDirectiveModal.addEventListener("click", () => dom.directiveModal.close());
 
-  // One-Way Door Approval Decisions
-  dom.btnApproveAction.addEventListener("click", () => {
+  // One-Way Door Approval Decisions Gated by Chairman PIN
+  dom.btnApproveAction.addEventListener("click", async () => {
     if (!currentApprovalTaskId) return;
+
+    // Trigger Chairman Security PIN Gate
+    const authorized = await promptChairmanPin(`authorize irreversible One-Way Door action for ${currentApprovalTaskId}`);
+    if (!authorized) {
+      showToast("One-Way Action cancelled or unauthorized.", "warning");
+      return;
+    }
+
     const notes = dom.inputApprovalNotes.value.trim();
-    appState.approveOneWayTask(currentApprovalTaskId, notes);
+    await appState.approveOneWayTask(currentApprovalTaskId, notes);
     dom.approvalModal.close();
     renderAll();
-    showToast(`✅ One-Way Action Approved for ${currentApprovalTaskId}!`, "success");
+    showToast(`✅ One-Way Action Approved & Executed for ${currentApprovalTaskId}!`, "success");
   });
 
-  dom.btnReviseApproval.addEventListener("click", () => {
+  dom.btnReviseApproval.addEventListener("click", async () => {
     if (!currentApprovalTaskId) return;
     const feedback = dom.inputApprovalNotes.value.trim() || "Please revise acceptance tests";
-    appState.reviseOneWayTask(currentApprovalTaskId, feedback);
+    await appState.reviseOneWayTask(currentApprovalTaskId, feedback);
     dom.approvalModal.close();
     renderAll();
     showToast(`Returned ${currentApprovalTaskId} for revision`, "warning");
   });
 
-  dom.btnRejectApproval.addEventListener("click", () => {
+  dom.btnRejectApproval.addEventListener("click", async () => {
     if (!currentApprovalTaskId) return;
     const reason = dom.inputApprovalNotes.value.trim() || "Rejected by Chairman";
-    appState.rejectOneWayTask(currentApprovalTaskId, reason);
+    await appState.rejectOneWayTask(currentApprovalTaskId, reason);
     dom.approvalModal.close();
     renderAll();
     showToast(`❌ One-Way Door Rejected for ${currentApprovalTaskId}`, "danger");
@@ -2278,7 +2834,8 @@ function setupEventListeners() {
 }
 
 // App Initialization
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   setupEventListeners();
+  await appState.init();
   renderAll();
 });

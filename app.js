@@ -1,227 +1,406 @@
 /**
- * WorkerFlow - Task & Execution Results Dashboard
- * Pure Vanilla JavaScript implementation with state management,
- * HTML5 drag-and-drop, interactive drawer inspector, and worker simulator.
+ * Agentic Company Cockpit (v1.3.0)
+ * Pure Vanilla JavaScript implementation with Corporate Governance,
+ * Chairman Directives, One-Way Door Approvals Desk, Agent Roster,
+ * Financial Guardrails, HTML5 Drag-and-Drop, and Multi-Agent Simulator.
  */
 
 // ============================================================================
-// Sample Initial Data (Realistic Worker & Automation Pipelines)
+// Agent Personas & Hierarchy Registry
+// ============================================================================
+const AGENT_ROSTER = [
+  {
+    id: "ceo",
+    name: "CEO Agent",
+    role: "Strategic Planning & Executive Delegation",
+    status: "Reasoning",
+    avatar: "👔",
+    reportsTo: "Chairman (Human)",
+    model: "Claude 3.7 Sonnet / Opus",
+    budget: "$15.00/day",
+    tokensUsed: 42800,
+    costUsd: 0.86,
+    activeTask: "Decomposing Directive DIR-1 into CTO tasks",
+    tools: ["plan_initiative", "delegate_task", "audit_financials", "compile_board_memo"]
+  },
+  {
+    id: "cto",
+    name: "CTO Agent",
+    role: "Technical Architecture & Engineering Standards",
+    status: "Auditing",
+    avatar: "📐",
+    reportsTo: "CEO Agent",
+    model: "Claude 3.7 Sonnet",
+    budget: "$15.00/day",
+    tokensUsed: 68400,
+    costUsd: 1.37,
+    activeTask: "TASK-103: PR #14 Merge Gate (Awaiting Chairman Approval)",
+    tools: ["spec_task", "review_architecture", "manage_worktree", "git_merge"]
+  },
+  {
+    id: "dev-1",
+    name: "Dev Worker 01",
+    role: "Backend & Core Automation Services",
+    status: "Coding",
+    avatar: "⚙️",
+    reportsTo: "CTO Agent",
+    model: "Claude 3.5 Sonnet",
+    budget: "$10.00/day",
+    tokensUsed: 54100,
+    costUsd: 1.08,
+    activeTask: "TASK-102: Unit Tests & Static Linter Engine",
+    tools: ["read_code", "write_code", "run_unit_tests", "git_commit"]
+  },
+  {
+    id: "dev-2",
+    name: "Dev Worker 02",
+    role: "Cockpit UI & Frontend Design System",
+    status: "Idle",
+    avatar: "🎨",
+    reportsTo: "CTO Agent",
+    model: "Claude 3.5 Sonnet",
+    budget: "$10.00/day",
+    tokensUsed: 31200,
+    costUsd: 0.62,
+    activeTask: "Ready for task dispatch",
+    tools: ["edit_html", "edit_css", "inspect_dom", "test_views"]
+  },
+  {
+    id: "reviewer",
+    name: "Reviewer Agent",
+    role: "Code Review & Governance Compliance",
+    status: "Auditing",
+    avatar: "🔍",
+    reportsTo: "CTO Agent",
+    model: "Claude 3.7 Sonnet",
+    budget: "$5.00/day",
+    tokensUsed: 22400,
+    costUsd: 0.45,
+    activeTask: "TASK-103: Acceptance Criteria & Diff Verification",
+    tools: ["audit_diff", "check_acceptance_criteria", "flag_one_way_door"]
+  }
+];
+
+// ============================================================================
+// Default Strategic Directives (Boardroom State)
+// ============================================================================
+const DEFAULT_DIRECTIVES = [
+  {
+    id: "DIR-1",
+    title: "Autonomous CI/CD & Worktree PR Review Pipeline",
+    priority: "high",
+    status: "in_progress",
+    createdAt: "2026-10-01 08:30",
+    budgetAllocated: "$5.00",
+    tokensUsed: 52400,
+    costUsd: 1.05,
+    context: "Establish automated developer agent sandboxes using temporary Git worktrees. Ensure Reviewer agent validates all PR diffs before halting for Chairman One-Way Door merge approval.",
+    childTaskIds: ["TASK-101", "TASK-102", "TASK-103"],
+    ceoReport: "CEO Note: Decomposed into 3 technical tasks with CTO. TASK-101 (Worktree scaffolding) is complete, TASK-102 is currently coding, and TASK-103 has halted at the One-Way Door gate pending Chairman sign-off."
+  },
+  {
+    id: "DIR-2",
+    title: "Corporate Governance Cockpit & Boardroom Dashboard v1.3",
+    priority: "urgent",
+    status: "completed",
+    createdAt: "2026-10-01 08:00",
+    budgetAllocated: "$4.00",
+    tokensUsed: 38200,
+    costUsd: 0.76,
+    context: "Upgrade WorkerFlow into the Agentic Company Cockpit with Directives Inbox, One-Way Door Approvals Desk, and Financial Guardrails.",
+    childTaskIds: ["TASK-104", "TASK-105"],
+    ceoReport: "CEO Delivery Note: UI and governance contracts successfully upgraded. Directives, Approvals Desk, and Agent Roster are live."
+  }
+];
+
+// ============================================================================
+// Default Corporate Tasks (Initial Seed Data)
 // ============================================================================
 const DEFAULT_TASKS = [
   {
     id: "TASK-101",
-    title: "E-Commerce Price Scraper (Amazon & Target)",
-    description: "Daily automated extraction of competitor pricing for top 1,500 retail SKUs.",
+    title: "Scaffold Git Worktree Isolation Daemon",
+    description: "Build temporary sandbox worktree creator under .worktrees/task-* to isolate agent branch edits.",
     status: "done",
+    door: "two_way",
+    ownerAgent: "cto",
+    worker: "CTO Agent",
+    directiveId: "DIR-1",
     priority: "high",
-    worker: "crawler-engine-eu-west",
-    tags: ["scraping", "retail", "cron"],
-    createdAt: "2026-10-01 08:30",
+    tags: ["git", "worktree", "sandbox"],
+    tokensUsed: 14200,
+    costUsd: 0.28,
+    createdAt: "2026-10-01 08:45",
+    acceptanceCriteria: [
+      "Worktree creation script executes cleanly without branch collisions",
+      "Auto-cleanup hook cleans directory upon task completion or error",
+      "Git status clean check invariant verified"
+    ],
     payload: {
-      targetCategories: ["Electronics", "Home & Kitchen"],
-      maxPages: 80,
-      currency: "USD",
-      concurrency: 8
+      worktreeRoot: ".worktrees",
+      branchPrefix: "agent/task-101",
+      cleanupPolicy: "always"
     },
     result: {
       status: "success",
       exitCode: 0,
-      duration: "2.42s",
-      summary: "Processed 1,420 SKUs cleanly, 0 timeouts",
-      recordsCount: 1420,
-      memoryUsage: "128MB",
-      executedAt: "2026-10-01 08:32:42",
+      duration: "3.24s",
+      summary: "Worktree daemon initialized: 0 collisions detected across 10 mock branches",
+      recordsCount: 10,
+      memoryUsage: "48MB",
+      executedAt: "2026-10-01 08:48:24",
       data: {
-        totalScraped: 1420,
-        priceChangesDetected: 147,
-        avgDiscount: "8.4%",
-        lowestPriceVarianceSku: "SKU-99420-X",
-        storageDestination: "s3://automation-worker-data/scrapes/2026-10-01/"
+        worktreesMounted: 10,
+        cleanupVerified: true,
+        exitStatus: "Clean 0"
       },
       logs: [
-        "[08:30:00] [INFO] Worker container spawned on node crawler-engine-eu-west",
-        "[08:30:02] [INFO] Loaded proxies from pool: 45 healthy proxies",
-        "[08:30:04] [INFO] Starting parallel crawl with 8 workers...",
-        "[08:31:15] [INFO] Batch 1/3 finished: 500 items extracted",
-        "[08:32:01] [INFO] Batch 2/3 finished: 500 items extracted",
-        "[08:32:40] [INFO] Batch 3/3 finished: 420 items extracted",
-        "[08:32:41] [SUCCESS] All target pages indexed without IP rate-limiting",
-        "[08:32:42] [SUCCESS] Output archived to s3 bucket (Exit code 0)"
+        "[08:45:00] [INFO] CTO Agent mounting isolated worktree sandbox...",
+        "[08:45:01] [INFO] Verifying git core hooks under .worktrees/",
+        "[08:46:12] [INFO] Successfully isolated directory branch from main working tree",
+        "[08:48:24] [SUCCESS] Scaffolding script tests passed (Exit code 0)"
       ],
       links: [
-        { label: "S3 Raw Output Parquet", url: "https://s3.amazonaws.com/automation-worker-data/scrapes/2026-10-01/prices.parquet" },
-        { label: "CloudWatch Execution Metric", url: "https://console.aws.amazon.com/cloudwatch/logs/worker-task-101" }
+        { label: "Git Worktree Design Spec", url: "file:///docs/INCREMENTAL_ROADMAP.md" }
       ]
     }
   },
   {
     id: "TASK-102",
-    title: "LLM Batch Embeddings & Semantic Indexing",
-    description: "Generate 1536-dim vector embeddings for newly ingested legal contracts.",
+    title: "Reviewer Agent Static Security & Linter Engine",
+    description: "Configure automated AST security scanner to audit proposed PR diffs against engineering standards.",
     status: "running",
+    door: "two_way",
+    ownerAgent: "dev-1",
+    worker: "Dev Worker 01",
+    directiveId: "DIR-1",
     priority: "urgent",
-    worker: "worker-gpu-cluster-02",
-    tags: ["ml-pipeline", "embeddings", "gpu"],
+    tags: ["security", "linter", "ast"],
+    tokensUsed: 21800,
+    costUsd: 0.44,
     createdAt: "2026-10-01 09:15",
+    acceptanceCriteria: [
+      "Scans diff for hardcoded API keys or leaked secrets",
+      "Checks unit test coverage for new functions > 85%",
+      "Emits structured review output conforming to PR schema"
+    ],
     payload: {
-      model: "text-embedding-3-large",
-      batchSize: 256,
-      quantization: "fp16",
-      indexTarget: "qdrant-cluster-prod"
+      ruleset: "strict-security",
+      entropyCheck: true,
+      maxTokenBudget: 30000
     },
     result: {
       status: "running",
       exitCode: "—",
-      duration: "41.5s",
-      summary: "In progress: 540 / 1,200 contracts embedded",
-      recordsCount: 540,
-      memoryUsage: "6.2GB VRAM",
+      duration: "45.1s",
+      summary: "In progress: Scanned 12 AST rule nodes, 0 secrets detected so far",
+      recordsCount: 12,
+      memoryUsage: "112MB",
       executedAt: "2026-10-01 09:15:10",
       data: {
-        totalToEmbed: 1200,
-        processed: 540,
-        gpuUtilization: "89%",
-        throughputTokensSec: 14200
+        rulesEvaluated: 12,
+        violations: 0,
+        coverageScore: "94%"
       },
       logs: [
-        "[09:15:10] [INFO] Allocating TensorRT runner on NVIDIA A10G...",
-        "[09:15:14] [INFO] Model weights verified (SHA256 valid)",
-        "[09:15:20] [INFO] Processing chunk 1: vectors [0..255]",
-        "[09:15:35] [INFO] Processing chunk 2: vectors [256..511]",
-        "[09:15:51] [INFO] Currently indexing chunk 3 into vector database..."
+        "[09:15:10] [INFO] Dev Worker 01 running AST rule checks...",
+        "[09:15:18] [INFO] Scanning commit diff against regex secret database...",
+        "[09:15:40] [INFO] 0 high-entropy keys found. Checking test coverage..."
       ],
-      links: [
-        { label: "GPU TensorBoard Metrics", url: "https://gpu-monitor.internal.net/runs/TASK-102" }
-      ]
+      links: []
     }
   },
   {
     id: "TASK-103",
-    title: "Daily Financial Reconciliation & Tax Audit",
-    description: "Match Stripe settlement records against internal order ledger.",
-    status: "review",
+    title: "Merge PR #14: CI/CD Security Gate to main",
+    description: "One-Way Door: Merge pull request #14 into production branch. Irreversible action waiting for Chairman authorization.",
+    status: "approval_pending",
+    door: "one_way",
+    ownerAgent: "cto",
+    worker: "CTO Agent",
+    directiveId: "DIR-1",
     priority: "urgent",
-    worker: "analytics-processor-04",
-    tags: ["finance", "audit", "compliance"],
-    createdAt: "2026-10-01 06:00",
+    tags: ["pr-merge", "one-way-door", "production"],
+    tokensUsed: 16400,
+    costUsd: 0.33,
+    createdAt: "2026-10-01 09:30",
+    acceptanceCriteria: [
+      "Reviewer Agent peer audit approved with 0 blockers",
+      "All unit and integration test suites exit with code 0",
+      "Explicit Chairman One-Way Door sign-off obtained"
+    ],
     payload: {
-      reconciliationDate: "2026-09-30",
-      currencies: ["USD", "EUR", "GBP"],
-      toleranceThresholdCents: 5
+      prNumber: 14,
+      targetBranch: "main",
+      sourceBranch: "feature/ci-cd-security-pipeline",
+      authorAgent: "Dev Worker 01",
+      reviewerAgent: "Reviewer Agent",
+      blastRadius: "Modifies CI/CD production deployment pipeline on GitHub"
     },
     result: {
       status: "partial",
-      exitCode: 2,
-      duration: "4.12s",
-      summary: "Completed with 2 micro-discrepancies needing signoff",
-      recordsCount: 3840,
-      memoryUsage: "210MB",
-      executedAt: "2026-10-01 06:04:12",
+      exitCode: "PAUSED",
+      duration: "18.2s",
+      summary: "Audits passed. Halted at One-Way Door: Requires Chairman sign-off.",
+      recordsCount: 1,
+      memoryUsage: "64MB",
+      executedAt: "2026-10-01 09:32:15",
       data: {
-        totalTransactions: 3840,
-        matchedCleanly: 3838,
-        flaggedVariances: 2,
-        netMismatchUSD: "$0.08",
-        statusMessage: "Requires human finance verification before ledger lock"
+        prTitle: "Feat: Automated Security Scanner Hook",
+        diffSummary: "+148 lines, -12 lines across 3 files",
+        testsRun: 24,
+        testsPassed: 24,
+        reviewerAuditVerdict: "Approved (Score 10/10)"
       },
       logs: [
-        "[06:00:01] [INFO] Fetching daily Stripe settlement report...",
-        "[06:00:05] [INFO] Ingesting database ledger snapshots...",
-        "[06:02:18] [INFO] Running dual-entry hash match algorithm...",
-        "[06:04:10] [WARN] Transaction #TX-9021 mismatch: fee offset of $0.04",
-        "[06:04:11] [WARN] Transaction #TX-9044 mismatch: currency rounding of $0.04",
-        "[06:04:12] [WARN] Audit finished with 2 warnings. Status: Pending Signoff."
+        "[09:30:00] [INFO] CTO Agent inspecting PR #14 payload...",
+        "[09:31:10] [INFO] Reviewer Agent: Acceptance criteria verified. All 24 test suites passed.",
+        "[09:32:00] [WARN] Action flagged as ONE-WAY DOOR: Merging to production main.",
+        "[09:32:15] [WARN] Execution halted. Transferred to Chairman Approvals Desk."
       ],
       links: [
-        { label: "Audit Discrepancy Sheet", url: "https://audit.internal.net/reports/2026-09-30-discrepancies" }
+        { label: "Pull Request #14 on GitHub", url: "https://github.com/apsmono/agentic-company/pull/14" }
       ]
     }
   },
   {
     id: "TASK-104",
-    title: "Customer Onboarding Webhook Dispatcher",
-    description: "Deliver welcome payloads to newly registered partner API endpoints.",
-    status: "failed",
-    priority: "medium",
-    worker: "edge-notifier-service",
-    tags: ["webhooks", "delivery", "network"],
-    createdAt: "2026-10-01 07:45",
+    title: "Corporate Governance Cockpit & Boardroom v1.3",
+    description: "Design and implement the Chairman Directives inbox, Approvals Desk, and real-time Agent Roster.",
+    status: "done",
+    door: "two_way",
+    ownerAgent: "dev-2",
+    worker: "Dev Worker 02",
+    directiveId: "DIR-2",
+    priority: "high",
+    tags: ["ui", "governance", "cockpit"],
+    tokensUsed: 22100,
+    costUsd: 0.44,
+    createdAt: "2026-10-01 07:30",
+    acceptanceCriteria: [
+      "Directives Inbox UI enables Chairman input and status tracking",
+      "One-Way Door Approvals Desk with decision modal",
+      "Agent Roster with live hierarchy and allowed tools",
+      "Zero-build vanilla HTML/CSS/JS with mobile responsiveness"
+    ],
     payload: {
-      endpointUrl: "https://api.partner-client.io/v1/webhooks",
-      timeoutSeconds: 5,
-      retries: 3
+      version: "1.3.0",
+      theme: "cyber-refined glassmorphism"
     },
     result: {
-      status: "failure",
-      exitCode: 504,
-      duration: "15.02s",
-      summary: "HTTP 504 Gateway Timeout from remote destination",
-      recordsCount: 0,
-      memoryUsage: "45MB",
-      executedAt: "2026-10-01 07:45:15",
+      status: "success",
+      exitCode: 0,
+      duration: "2.10s",
+      summary: "Corporate Cockpit v1.3 rendered with 0 console warnings",
+      recordsCount: 5,
+      memoryUsage: "32MB",
+      executedAt: "2026-10-01 07:32:10",
       data: {
-        httpStatus: 504,
-        errorType: "GatewayTimeout",
-        destinationHost: "api.partner-client.io",
-        attemptsExhausted: 3
+        componentsRendered: ["Directives", "ApprovalsDesk", "AgentRoster", "MetricsGauges"],
+        responsiveBreakpoints: ["desktop", "tablet", "mobile"]
       },
       logs: [
-        "[07:45:00] [INFO] Dispatching webhook payload for user_id=usr_88319...",
-        "[07:45:05] [WARN] Attempt 1 failed: Connection timeout after 5000ms",
-        "[07:45:10] [WARN] Attempt 2 failed: Gateway timeout (504)",
-        "[07:45:15] [ERROR] Attempt 3 failed: Remote server did not respond",
-        "[07:45:15] [ERROR] Task aborted with exit code 504. Sent to dead-letter queue."
+        "[07:30:00] [INFO] Dev Worker 02 loading component templates...",
+        "[07:31:20] [INFO] Verified glassmorphic contrast ratios and mobile tap targets",
+        "[07:32:10] [SUCCESS] Cockpit v1.3 build successfully validated."
       ],
-      links: [
-        { label: "Dead-Letter Queue Message", url: "https://dlq.internal.net/msg/TASK-104" }
-      ]
+      links: []
     }
   },
   {
     id: "TASK-105",
-    title: "PostgreSQL Partition Pruning & VACUUM ANALYZE",
-    description: "Weekly table maintenance and dead-tuple compaction for audit logs.",
-    status: "backlog",
-    priority: "low",
-    worker: "worker-node-us-east-1",
-    tags: ["database", "maintenance", "sql"],
-    createdAt: "2026-10-01 05:00",
+    title: "Weekly Board Memo & Autonomous Executive Report",
+    description: "Compile weekly token burn, PR velocity, active bottlenecks, and strategic decisions for the Chairman.",
+    status: "review",
+    door: "two_way",
+    ownerAgent: "ceo",
+    worker: "CEO Agent",
+    directiveId: "DIR-2",
+    priority: "medium",
+    tags: ["report", "executive", "board"],
+    tokensUsed: 16100,
+    costUsd: 0.32,
+    createdAt: "2026-10-01 08:00",
+    acceptanceCriteria: [
+      "Summarizes tokens burned vs daily ceiling",
+      "Highlights blocked one-way doors",
+      "Generates markdown briefing memo in structured artifacts"
+    ],
     payload: {
-      tables: ["audit_events_2026_09", "system_metrics_hourly"],
-      vacuumMode: "ANALYZE",
-      lockTimeoutMs: 3000
+      period: "Week 40 - 2026",
+      format: "executive-briefing"
     },
-    result: null
+    result: {
+      status: "partial",
+      exitCode: 0,
+      duration: "1.95s",
+      summary: "Board report draft compiled; waiting for human review",
+      recordsCount: 1,
+      memoryUsage: "40MB",
+      executedAt: "2026-10-01 08:01:55",
+      data: {
+        totalWeeklySpend: "$7.82",
+        budgetVariance: "-12% under ceiling",
+        keyBlocker: "Awaiting Chairman sign-off on PR #14"
+      },
+      logs: [
+        "[08:00:00] [INFO] CEO Agent aggregating database metrics...",
+        "[08:00:45] [INFO] Generated weekly executive memo draft",
+        "[08:01:55] [SUCCESS] Report attached. Ready for Chairman reading."
+      ],
+      links: [
+        { label: "Executive Board Memo Draft", url: "file:///docs/AGENTIC_COMPANY_BUILD_PLAN.md" }
+      ]
+    }
   },
   {
     id: "TASK-106",
-    title: "Multi-Region Cloudflare CDN Cache Purge",
-    description: "Invalidate static asset cache following release tag v3.12.0.",
+    title: "Configure Cloudflare Production Edge Security Rules",
+    description: "Apply rate limiting, strict CSP headers, and TLS 1.3 enforcement on public ingress routes.",
     status: "backlog",
+    door: "one_way",
+    ownerAgent: "cto",
+    worker: "CTO Agent",
+    directiveId: "DIR-2",
     priority: "medium",
-    worker: "edge-notifier-service",
-    tags: ["cdn", "deploy", "cache"],
+    tags: ["security", "cloudflare", "headers"],
+    tokensUsed: 0,
+    costUsd: 0.00,
     createdAt: "2026-10-01 10:00",
+    acceptanceCriteria: [
+      "CSP headers configured without unsafe-eval",
+      "Rate limiting policy locks at 100 req/min per IP",
+      "Chairman sign-off required prior to production push"
+    ],
     payload: {
-      zoneId: "zn_9942a7b8e",
-      purgePaths: ["/assets/*", "/api/v1/config"]
+      zone: "agentic-company.internal",
+      tlsVersion: "1.3"
     },
     result: null
   }
 ];
 
 // ============================================================================
-// Application State Management
+// Application State Manager (TaskManager)
 // ============================================================================
 class TaskManager {
   constructor() {
-    this.storageKey = "workerflow_tasks_v1";
+    this.storageKey = "agentic_company_tasks_v1";
+    this.legacyKey = "workerflow_tasks_v1";
+    this.directivesKey = "agentic_company_directives_v1";
+
     this.tasks = this.loadTasks();
-    this.activeTaskId = null; // currently inspected task in drawer
-    this.currentView = "kanban"; // "kanban" or "table"
+    this.directives = this.loadDirectives();
+    this.agents = AGENT_ROSTER;
+
+    this.activeTaskId = null;
+    this.currentView = "kanban"; // "kanban", "approvals", "directives", "agents", "table"
     this.searchQuery = "";
+    this.killSwitchActive = false;
+
     this.filters = {
       priority: "all",
+      door: "all",
       worker: "all",
       result: "all"
     };
@@ -229,12 +408,22 @@ class TaskManager {
 
   loadTasks() {
     try {
-      const saved = localStorage.getItem(this.storageKey);
+      // Check modern storage key first
+      let saved = localStorage.getItem(this.storageKey);
       if (saved) {
         return JSON.parse(saved);
       }
+
+      // Check and migrate legacy WorkerFlow key
+      const legacySaved = localStorage.getItem(this.legacyKey);
+      if (legacySaved) {
+        const parsed = JSON.parse(legacySaved);
+        // Persist into modern key without deleting user work
+        localStorage.setItem(this.storageKey, JSON.stringify(parsed));
+        return parsed;
+      }
     } catch (e) {
-      console.warn("Failed to parse stored tasks, falling back to default.", e);
+      console.warn("Failed to parse stored tasks, falling back to corporate defaults.", e);
     }
     return JSON.parse(JSON.stringify(DEFAULT_TASKS));
   }
@@ -247,9 +436,30 @@ class TaskManager {
     }
   }
 
+  loadDirectives() {
+    try {
+      const saved = localStorage.getItem(this.directivesKey);
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      console.warn("Failed to load directives, falling back to default.", e);
+    }
+    return JSON.parse(JSON.stringify(DEFAULT_DIRECTIVES));
+  }
+
+  saveDirectives() {
+    try {
+      localStorage.setItem(this.directivesKey, JSON.stringify(this.directives));
+    } catch (e) {
+      console.error("Failed to save directives to localStorage:", e);
+    }
+  }
+
   resetToDefault() {
     this.tasks = JSON.parse(JSON.stringify(DEFAULT_TASKS));
+    this.directives = JSON.parse(JSON.stringify(DEFAULT_DIRECTIVES));
+    this.killSwitchActive = false;
     this.saveTasks();
+    this.saveDirectives();
   }
 
   getAllTasks() {
@@ -258,7 +468,7 @@ class TaskManager {
 
   getFilteredTasks() {
     return this.tasks.filter(task => {
-      // Search query check
+      // Search query
       if (this.searchQuery) {
         const q = this.searchQuery.toLowerCase();
         const matchesTitle = task.title.toLowerCase().includes(q);
@@ -281,9 +491,17 @@ class TaskManager {
         return false;
       }
 
-      // Worker node filter
-      if (this.filters.worker !== "all" && task.worker !== this.filters.worker) {
+      // Door filter
+      if (this.filters.door !== "all" && (task.door || "two_way") !== this.filters.door) {
         return false;
+      }
+
+      // Assigned Agent/Worker filter
+      if (this.filters.worker !== "all") {
+        const taskAgent = (task.ownerAgent || task.worker || "").toLowerCase();
+        if (!taskAgent.includes(this.filters.worker.toLowerCase())) {
+          return false;
+        }
       }
 
       // Result status filter
@@ -307,9 +525,15 @@ class TaskManager {
       title: taskData.title,
       description: taskData.description || "",
       status: taskData.status || "backlog",
+      door: taskData.door || "two_way",
+      ownerAgent: taskData.ownerAgent || "cto",
+      worker: taskData.worker || "CTO Agent",
+      directiveId: taskData.directiveId || null,
       priority: taskData.priority || "medium",
-      worker: taskData.worker || "worker-node-us-east-1",
       tags: taskData.tags || [],
+      acceptanceCriteria: taskData.acceptanceCriteria || [],
+      tokensUsed: 0,
+      costUsd: 0.00,
       createdAt: new Date().toISOString().replace("T", " ").substring(0, 16),
       payload: taskData.payload || {},
       result: null
@@ -353,23 +577,147 @@ class TaskManager {
     return false;
   }
 
+  // Directives methods
+  getDirectives() {
+    return this.directives;
+  }
+
+  addDirective(dirData) {
+    const nextId = `DIR-${this.directives.length + 1}`;
+    const newDir = {
+      id: nextId,
+      title: dirData.title,
+      priority: dirData.priority || "high",
+      status: "in_progress",
+      createdAt: new Date().toISOString().replace("T", " ").substring(0, 16),
+      budgetAllocated: dirData.budgetAllocated || "$5.00",
+      tokensUsed: 0,
+      costUsd: 0.00,
+      context: dirData.context || "",
+      childTaskIds: [],
+      ceoReport: "CEO Note: Directive received from Chairman. Currently analyzing technical requirements and preparing CTO task decomposition."
+    };
+    this.directives.unshift(newDir);
+    this.saveDirectives();
+    return newDir;
+  }
+
+  // Approvals Desk
+  getApprovals() {
+    return this.tasks.filter(t => t.status === "approval_pending" || (t.door === "one_way" && t.status === "review"));
+  }
+
+  approveOneWayTask(taskId, chairmanNotes = "") {
+    const task = this.getTaskById(taskId);
+    if (!task) return false;
+
+    task.status = "done";
+    const ts = new Date().toLocaleTimeString();
+    if (!task.result) {
+      task.result = {
+        status: "success",
+        exitCode: 0,
+        duration: "1.2s",
+        summary: "One-Way Door Authorized & Executed by Chairman",
+        logs: []
+      };
+    } else {
+      task.result.status = "success";
+      task.result.exitCode = 0;
+      task.result.summary = "One-Way Door Authorized: Action executed cleanly.";
+    }
+
+    task.result.logs = task.result.logs || [];
+    task.result.logs.push(`[${ts}] [CHAIRMAN SIGN-OFF] Authorized by Chairman.`);
+    if (chairmanNotes) {
+      task.result.logs.push(`[${ts}] [CHAIRMAN NOTES] ${chairmanNotes}`);
+    }
+    task.result.logs.push(`[${ts}] [SUCCESS] Task completed. Action merged/dispatched.`);
+
+    this.saveTasks();
+    return true;
+  }
+
+  rejectOneWayTask(taskId, reason = "Rejected by Chairman") {
+    const task = this.getTaskById(taskId);
+    if (!task) return false;
+
+    task.status = "failed";
+    const ts = new Date().toLocaleTimeString();
+    if (!task.result) {
+      task.result = { status: "failure", exitCode: 1, duration: "—", summary: "Rejected by Chairman", logs: [] };
+    }
+    task.result.status = "failure";
+    task.result.exitCode = 1;
+    task.result.summary = `Aborted by Chairman: ${reason}`;
+    task.result.logs = task.result.logs || [];
+    task.result.logs.push(`[${ts}] [CHAIRMAN REJECTION] ${reason}`);
+
+    this.saveTasks();
+    return true;
+  }
+
+  reviseOneWayTask(taskId, feedback = "Revision requested") {
+    const task = this.getTaskById(taskId);
+    if (!task) return false;
+
+    task.status = "running";
+    const ts = new Date().toLocaleTimeString();
+    task.result = task.result || { logs: [] };
+    task.result.status = "running";
+    task.result.summary = `Revising work based on Chairman guidance: ${feedback}`;
+    task.result.logs = task.result.logs || [];
+    task.result.logs.push(`[${ts}] [CHAIRMAN REVISION GUIDANCE] ${feedback}`);
+
+    this.saveTasks();
+    return true;
+  }
+
+  // Kill Switch
+  toggleKillSwitch() {
+    this.killSwitchActive = !this.killSwitchActive;
+    return this.killSwitchActive;
+  }
+
+  // Metrics calculation
   getMetrics() {
     const total = this.tasks.length;
     const running = this.tasks.filter(t => t.status === "running").length;
+    const approvalCount = this.getApprovals().length;
     const done = this.tasks.filter(t => t.status === "done").length;
     const failed = this.tasks.filter(t => t.status === "failed" || (t.result && t.result.status === "failure")).length;
+
+    let totalTokens = 0;
+    let totalCost = 0;
+    this.tasks.forEach(t => {
+      totalTokens += (t.tokensUsed || 0);
+      totalCost += (t.costUsd || 0);
+    });
+
     const successTasks = this.tasks.filter(t => t.result && t.result.status === "success").length;
     const completedWithResult = this.tasks.filter(t => t.result && t.result.status).length;
     const rate = completedWithResult > 0 ? Math.round((successTasks / completedWithResult) * 100) : 0;
 
-    return { total, running, done, failed, success: successTasks, rate };
+    return {
+      total,
+      running,
+      approvals: approvalCount,
+      done,
+      failed,
+      tokens: totalTokens,
+      cost: totalCost,
+      rate
+    };
   }
 
   getWorkerList() {
     const workers = new Set();
     this.tasks.forEach(t => {
-      if (t.worker) workers.add(t.worker);
+      const w = t.worker || (t.ownerAgent ? t.ownerAgent.toUpperCase() : null);
+      if (w) workers.add(w);
     });
+    // Add registered agent names
+    this.agents.forEach(a => workers.add(a.name));
     return Array.from(workers);
   }
 }
@@ -378,27 +726,61 @@ class TaskManager {
 const appState = new TaskManager();
 
 // ============================================================================
-// UI Controller & Renderers
+// UI Elements & DOM Cache
 // ============================================================================
-
-// DOM Elements Cache
 const dom = {
-  // Metrics
+  // Metrics & Financial Guardrails
   metricTotal: document.getElementById("metricTotal"),
   metricRunning: document.getElementById("metricRunning"),
+  metricApproval: document.getElementById("metricApproval"),
   metricSuccess: document.getElementById("metricSuccess"),
-  metricFailed: document.getElementById("metricFailed"),
-  metricRate: document.getElementById("metricRate"),
+  metricTokens: document.getElementById("metricTokens"),
+  metricCost: document.getElementById("metricCost"),
+  metricCeiling: document.getElementById("metricCeiling"),
+  pillApproval: document.getElementById("pillApproval"),
 
-  // Containers
+  // Header Actions
+  btnKillSwitch: document.getElementById("btnKillSwitch"),
+  killSwitchText: document.getElementById("killSwitchText"),
+  btnNewDirective: document.getElementById("btnNewDirective"),
+  btnNewTask: document.getElementById("btnNewTask"),
+  btnSimulateAll: document.getElementById("btnSimulateAll"),
+  btnResetDemo: document.getElementById("btnResetDemo"),
+
+  // Search & Filter controls
+  searchInput: document.getElementById("searchInput"),
+  clearSearch: document.getElementById("clearSearch"),
+  filterPriority: document.getElementById("filterPriority"),
+  filterDoor: document.getElementById("filterDoor"),
+  filterWorker: document.getElementById("filterWorker"),
+  filterResult: document.getElementById("filterResult"),
+
+  // View switchers
+  viewKanbanBtn: document.getElementById("viewKanbanBtn"),
+  viewApprovalsBtn: document.getElementById("viewApprovalsBtn"),
+  viewDirectivesBtn: document.getElementById("viewDirectivesBtn"),
+  viewAgentsBtn: document.getElementById("viewAgentsBtn"),
+  viewTableBtn: document.getElementById("viewTableBtn"),
+  badgeApprovalsCount: document.getElementById("badgeApprovalsCount"),
+
+  // Main containers & sections
   kanbanBoard: document.getElementById("kanbanBoard"),
+  approvalsSection: document.getElementById("approvalsSection"),
+  approvalsDeskGrid: document.getElementById("approvalsDeskGrid"),
+  approvalsDeskCount: document.getElementById("approvalsDeskCount"),
+  directivesSection: document.getElementById("directivesSection"),
+  directivesGrid: document.getElementById("directivesGrid"),
+  btnOpenDirectiveFormModal: document.getElementById("btnOpenDirectiveFormModal"),
+  agentsSection: document.getElementById("agentsSection"),
+  agentsGrid: document.getElementById("agentsGrid"),
   tableViewContainer: document.getElementById("tableViewContainer"),
   matrixTableBody: document.getElementById("matrixTableBody"),
 
-  // Columns & counters
+  // Columns & Counters
   colCards: {
     backlog: document.getElementById("cards-backlog"),
     running: document.getElementById("cards-running"),
+    approval_pending: document.getElementById("cards-approval_pending"),
     review: document.getElementById("cards-review"),
     done: document.getElementById("cards-done"),
     failed: document.getElementById("cards-failed")
@@ -406,26 +788,13 @@ const dom = {
   colCounts: {
     backlog: document.getElementById("count-backlog"),
     running: document.getElementById("count-running"),
+    approval_pending: document.getElementById("count-approval_pending"),
     review: document.getElementById("count-review"),
     done: document.getElementById("count-done"),
     failed: document.getElementById("count-failed")
   },
 
-  // Search & Filter controls
-  searchInput: document.getElementById("searchInput"),
-  clearSearch: document.getElementById("clearSearch"),
-  filterPriority: document.getElementById("filterPriority"),
-  filterWorker: document.getElementById("filterWorker"),
-  filterResult: document.getElementById("filterResult"),
-  viewKanbanBtn: document.getElementById("viewKanbanBtn"),
-  viewTableBtn: document.getElementById("viewTableBtn"),
-
-  // Header Actions
-  btnNewTask: document.getElementById("btnNewTask"),
-  btnSimulateAll: document.getElementById("btnSimulateAll"),
-  btnResetDemo: document.getElementById("btnResetDemo"),
-
-  // Drawer
+  // Drawer Elements
   drawer: document.getElementById("resultsDrawer"),
   drawerBackdrop: document.getElementById("drawerBackdrop"),
   btnCloseDrawer: document.getElementById("btnCloseDrawer"),
@@ -444,7 +813,6 @@ const dom = {
   btnDeleteTask: document.getElementById("btnDeleteTask"),
   artifactJsonContent: document.getElementById("artifactJsonContent"),
   terminalLogs: document.getElementById("terminalLogs"),
-  logCount: document.getElementById("logCount"),
   taskPayloadContent: document.getElementById("taskPayloadContent"),
   resourcesList: document.getElementById("resourcesList"),
   btnCopyResultJson: document.getElementById("btnCopyResultJson"),
@@ -452,22 +820,51 @@ const dom = {
   btnCopyLogs: document.getElementById("btnCopyLogs"),
   btnAddExternalLink: document.getElementById("btnAddExternalLink"),
 
-  // Task Modal
+  // Task Dialog
   taskModal: document.getElementById("taskModal"),
   taskForm: document.getElementById("taskForm"),
   taskFormId: document.getElementById("taskFormId"),
   modalTaskTitle: document.getElementById("modalTaskTitle"),
   inputTaskTitle: document.getElementById("inputTaskTitle"),
   selectTaskStatus: document.getElementById("selectTaskStatus"),
+  selectTaskDoor: document.getElementById("selectTaskDoor"),
+  selectTaskAgent: document.getElementById("selectTaskAgent"),
   selectTaskPriority: document.getElementById("selectTaskPriority"),
-  inputTaskWorker: document.getElementById("inputTaskWorker"),
+  selectTaskDirective: document.getElementById("selectTaskDirective"),
   inputTaskTags: document.getElementById("inputTaskTags"),
   inputTaskDesc: document.getElementById("inputTaskDesc"),
+  inputTaskCriteria: document.getElementById("inputTaskCriteria"),
   inputTaskPayload: document.getElementById("inputTaskPayload"),
   btnCloseTaskModal: document.getElementById("btnCloseTaskModal"),
   btnCancelTaskModal: document.getElementById("btnCancelTaskModal"),
 
-  // Result Modal
+  // Directive Dialog
+  directiveModal: document.getElementById("directiveModal"),
+  directiveForm: document.getElementById("directiveForm"),
+  inputDirectiveTitle: document.getElementById("inputDirectiveTitle"),
+  selectDirectivePriority: document.getElementById("selectDirectivePriority"),
+  inputDirectiveBudget: document.getElementById("inputDirectiveBudget"),
+  inputDirectiveContext: document.getElementById("inputDirectiveContext"),
+  btnCloseDirectiveModal: document.getElementById("btnCloseDirectiveModal"),
+  btnCancelDirectiveModal: document.getElementById("btnCancelDirectiveModal"),
+
+  // One-Way Door Approval Dialog
+  approvalModal: document.getElementById("approvalModal"),
+  approvalTaskId: document.getElementById("approvalTaskId"),
+  approvalActionName: document.getElementById("approvalActionName"),
+  approvalRequestingAgent: document.getElementById("approvalRequestingAgent"),
+  approvalTokenCost: document.getElementById("approvalTokenCost"),
+  approvalBlastRadiusDesc: document.getElementById("approvalBlastRadiusDesc"),
+  approvalCriteriaList: document.getElementById("approvalCriteriaList"),
+  approvalPayloadDiff: document.getElementById("approvalPayloadDiff"),
+  inputApprovalNotes: document.getElementById("inputApprovalNotes"),
+  btnCloseApprovalModal: document.getElementById("btnCloseApprovalModal"),
+  btnCancelApprovalModal: document.getElementById("btnCancelApprovalModal"),
+  btnRejectApproval: document.getElementById("btnRejectApproval"),
+  btnReviseApproval: document.getElementById("btnReviseApproval"),
+  btnApproveAction: document.getElementById("btnApproveAction"),
+
+  // Result & Link Dialogs
   resultModal: document.getElementById("resultModal"),
   resultForm: document.getElementById("resultForm"),
   resultFormTaskId: document.getElementById("resultFormTaskId"),
@@ -480,7 +877,6 @@ const dom = {
   btnCloseResultModal: document.getElementById("btnCloseResultModal"),
   btnCancelResultModal: document.getElementById("btnCancelResultModal"),
 
-  // Link Modal
   linkModal: document.getElementById("linkModal"),
   linkForm: document.getElementById("linkForm"),
   inputLinkLabel: document.getElementById("inputLinkLabel"),
@@ -488,43 +884,100 @@ const dom = {
   btnCloseLinkModal: document.getElementById("btnCloseLinkModal"),
   btnCancelLinkModal: document.getElementById("btnCancelLinkModal"),
 
-  // Toasts
   toastContainer: document.getElementById("toastContainer")
 };
 
-// ============================================================================
-// Render Functions
-// ============================================================================
+// Current pending task in approval modal
+let currentApprovalTaskId = null;
 
+// ============================================================================
+// Helper Utilities
+// ============================================================================
+function escapeHtml(str) {
+  if (str === null || str === undefined) return "";
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function showToast(message, type = "info") {
+  const toast = document.createElement("div");
+  toast.className = `toast toast-${type}`;
+  toast.innerHTML = `
+    <span>${escapeHtml(message)}</span>
+    <button type="button" style="background:none; border:none; color:currentColor; cursor:pointer; font-size:1.1rem;">&times;</button>
+  `;
+
+  toast.querySelector("button").addEventListener("click", () => toast.remove());
+  dom.toastContainer.appendChild(toast);
+
+  setTimeout(() => {
+    if (toast.parentNode) toast.remove();
+  }, 4200);
+}
+
+// ============================================================================
+// UI Renderers
+// ============================================================================
 function renderMetrics() {
   const m = appState.getMetrics();
   dom.metricTotal.textContent = m.total;
   dom.metricRunning.textContent = m.running;
-  dom.metricSuccess.textContent = m.success;
-  dom.metricFailed.textContent = m.failed;
-  dom.metricRate.textContent = `${m.rate}%`;
+  dom.metricApproval.textContent = m.approvals;
+  dom.metricSuccess.textContent = m.done;
+
+  // Format tokens and cost
+  const kTokens = (m.tokens / 1000).toFixed(1);
+  dom.metricTokens.textContent = `${kTokens}k`;
+  dom.metricCost.textContent = `$${m.cost.toFixed(2)}`;
+
+  // Approvals badge in view button
+  if (dom.badgeApprovalsCount) {
+    dom.badgeApprovalsCount.textContent = m.approvals;
+    dom.badgeApprovalsCount.style.display = m.approvals > 0 ? "inline-block" : "none";
+  }
+
+  // Approvals desk counter
+  if (dom.approvalsDeskCount) {
+    dom.approvalsDeskCount.textContent = m.approvals;
+  }
 }
 
 function updateWorkerFilterOptions() {
   const currentVal = dom.filterWorker.value;
   const workers = appState.getWorkerList();
-  
-  dom.filterWorker.innerHTML = '<option value="all">All Worker Nodes</option>';
+
+  dom.filterWorker.innerHTML = '<option value="all">All Assigned Agents</option>';
   workers.forEach(w => {
     const opt = document.createElement("option");
     opt.value = w;
     opt.textContent = w;
-    if (w === currentVal) opt.selected = true;
     dom.filterWorker.appendChild(opt);
   });
+
+  if (workers.includes(currentVal)) {
+    dom.filterWorker.value = currentVal;
+  }
 }
 
 function renderKanban() {
-  // Clear all columns
-  Object.values(dom.colCards).forEach(el => el.innerHTML = "");
+  // Clear columns
+  Object.values(dom.colCards).forEach(el => {
+    if (el) el.innerHTML = "";
+  });
 
   const filteredTasks = appState.getFilteredTasks();
-  const columnCounts = { backlog: 0, running: 0, review: 0, done: 0, failed: 0 };
+  const columnCounts = {
+    backlog: 0,
+    running: 0,
+    approval_pending: 0,
+    review: 0,
+    done: 0,
+    failed: 0
+  };
 
   filteredTasks.forEach(task => {
     const colStatus = task.status || "backlog";
@@ -538,7 +991,7 @@ function renderKanban() {
     }
   });
 
-  // Update counts
+  // Update counters
   Object.keys(columnCounts).forEach(status => {
     if (dom.colCounts[status]) {
       dom.colCounts[status].textContent = columnCounts[status];
@@ -553,11 +1006,21 @@ function createTaskCardElement(task) {
   card.id = `card-${task.id}`;
   card.dataset.taskId = task.id;
 
-  // Drag event listeners
+  if (task.status === "approval_pending") {
+    card.classList.add("card-one-way-pending");
+  }
+
+  // HTML5 Drag listeners
   card.addEventListener("dragstart", handleDragStart);
   card.addEventListener("dragend", handleDragEnd);
 
-  // Result Badge / Hook calculation
+  // Door badge
+  const isOneWay = (task.door === "one_way");
+  const doorBadgeHtml = isOneWay
+    ? `<span class="badge-one-way" title="Irreversible: Requires Chairman sign-off">⚠️ 1-Way Gate</span>`
+    : `<span class="badge-two-way" title="Reversible: Autonomous execution">⚡ 2-Way</span>`;
+
+  // Result Badge / Hook
   let resultBoxHtml = "";
   if (task.result) {
     const resStatus = task.result.status || "none";
@@ -566,7 +1029,7 @@ function createTaskCardElement(task) {
 
     if (resStatus === "success") {
       statusClass = "has-success";
-      statusText = "🟢 Execution Success";
+      statusText = "🟢 Completed Cleanly";
     } else if (resStatus === "failure") {
       statusClass = "has-failed";
       statusText = "🔴 Failed / Error";
@@ -575,11 +1038,11 @@ function createTaskCardElement(task) {
       statusText = "⚡ Executing...";
     } else if (resStatus === "partial") {
       statusClass = "has-running";
-      statusText = "🟡 Warnings Flagged";
+      statusText = task.status === "approval_pending" ? "⚠️ One-Way Sign-off Pending" : "🟡 In Review";
     }
 
     resultBoxHtml = `
-      <div class="card-result-box ${statusClass}" data-action="open-result" title="Click to inspect execution results">
+      <div class="card-result-box ${statusClass}" data-action="open-result" title="Click to inspect output and logs">
         <div class="result-top-info">
           <span class="result-status-tag ${resStatus}">${statusText}</span>
           <span class="result-duration">${task.result.duration || ""}</span>
@@ -591,7 +1054,7 @@ function createTaskCardElement(task) {
     resultBoxHtml = `
       <div class="card-result-box no-results" data-action="open-result" title="Click to view details or attach result">
         <div class="result-top-info">
-          <span class="result-status-tag none">⚪ No Result Attached</span>
+          <span class="result-status-tag none">⚪ Ready in Queue</span>
           <span class="result-duration">Queued</span>
         </div>
         <div class="result-summary-text">Ready for execution runner</div>
@@ -604,9 +1067,15 @@ function createTaskCardElement(task) {
     .map(t => `<span class="tag-pill">#${escapeHtml(t)}</span>`)
     .join("");
 
+  // Agent name
+  const agentDisplayName = task.worker || (task.ownerAgent ? task.ownerAgent.toUpperCase() : "CTO Agent");
+
   card.innerHTML = `
     <div class="card-top-row">
-      <span class="task-id-badge">${escapeHtml(task.id)}</span>
+      <div style="display:flex; align-items:center; gap:0.4rem;">
+        <span class="task-id-badge">${escapeHtml(task.id)}</span>
+        ${doorBadgeHtml}
+      </div>
       <span class="priority-badge priority-${task.priority}">${task.priority}</span>
     </div>
     <div class="card-title" data-action="open-drawer">${escapeHtml(task.title)}</div>
@@ -618,21 +1087,27 @@ function createTaskCardElement(task) {
         <line x1="6" y1="6" x2="6.01" y2="6"></line>
         <line x1="6" y1="18" x2="6.01" y2="18"></line>
       </svg>
-      <span>${escapeHtml(task.worker || "unassigned")}</span>
+      <span>${escapeHtml(agentDisplayName)}</span>
+      ${task.directiveId ? `<span style="margin-left:auto; font-family:var(--font-mono); font-size:0.68rem; color:var(--accent-cyan);">${escapeHtml(task.directiveId)}</span>` : ""}
     </div>
     ${tagsHtml ? `<div class="card-tags">${tagsHtml}</div>` : ""}
     ${resultBoxHtml}
     <div class="card-footer">
       <span class="card-timestamp">${escapeHtml(task.createdAt || "")}</span>
       <div class="card-action-links">
+        ${task.status === "approval_pending" ? `
+          <button type="button" class="btn-card-action action-signoff" data-action="open-approval" title="Review and authorize One-Way action">
+            <span>✍️ Sign Off</span>
+          </button>
+        ` : ""}
         <button type="button" class="btn-card-action action-inspect" data-action="open-drawer" title="Inspect Results & Logs">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
             <circle cx="12" cy="12" r="3"></circle>
           </svg>
-          <span>Results</span>
+          <span>Logs</span>
         </button>
-        <button type="button" class="btn-card-action" data-action="quick-run" title="Run worker simulation">
+        <button type="button" class="btn-card-action" data-action="quick-run" title="Run agent execution">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polygon points="5 3 19 12 5 21 5 3"></polygon>
           </svg>
@@ -641,19 +1116,24 @@ function createTaskCardElement(task) {
     </div>
   `;
 
-  // Click delegation inside card
+  // Card click actions
   card.addEventListener("click", e => {
     const actionEl = e.target.closest("[data-action]");
     if (actionEl) {
       const action = actionEl.dataset.action;
-      if (action === "open-drawer" || action === "open-result") {
+      if (action === "open-approval") {
+        openApprovalModal(task.id);
+      } else if (action === "open-drawer" || action === "open-result") {
         openResultsDrawer(task.id);
       } else if (action === "quick-run") {
         simulateWorkerRun(task.id);
       }
     } else {
-      // Default to opening results drawer
-      openResultsDrawer(task.id);
+      if (task.status === "approval_pending") {
+        openApprovalModal(task.id);
+      } else {
+        openResultsDrawer(task.id);
+      }
     }
   });
 
@@ -667,7 +1147,7 @@ function renderTableView() {
   if (tasks.length === 0) {
     dom.matrixTableBody.innerHTML = `
       <tr>
-        <td colspan="9" style="text-align: center; padding: 2rem; color: var(--text-dim);">
+        <td colspan="10" style="text-align: center; padding: 2rem; color: var(--text-dim);">
           No tasks found matching your filters.
         </td>
       </tr>
@@ -681,15 +1161,19 @@ function renderTableView() {
     let resultStatusBadge = `<span class="result-badge none">No Result</span>`;
     let durationText = "—";
     let summaryText = "—";
-    let lastRun = task.createdAt;
 
     if (task.result) {
       const st = task.result.status;
       resultStatusBadge = `<span class="result-badge ${st}">${st.toUpperCase()}</span>`;
       durationText = task.result.duration || "—";
       summaryText = task.result.summary || "Completed";
-      lastRun = task.result.executedAt || task.createdAt;
     }
+
+    const doorBadge = (task.door === "one_way")
+      ? `<span class="badge-one-way">1-Way ⚠️</span>`
+      : `<span class="badge-two-way">2-Way ⚡</span>`;
+
+    const tokensStr = task.tokensUsed ? `${(task.tokensUsed / 1000).toFixed(1)}k ($${(task.costUsd || 0).toFixed(2)})` : "—";
 
     tr.innerHTML = `
       <td><span class="task-id-badge">${escapeHtml(task.id)}</span></td>
@@ -697,17 +1181,21 @@ function renderTableView() {
         <div style="font-weight: 600; color: var(--text-main); cursor: pointer;" class="table-task-link">${escapeHtml(task.title)}</div>
         <div style="font-size: 0.72rem; color: var(--text-dim); font-family: var(--font-mono);">${escapeHtml(task.worker || "unassigned")}</div>
       </td>
+      <td>${doorBadge}</td>
       <td><span class="status-pill status-${task.status}">${task.status}</span></td>
       <td><span class="priority-badge priority-${task.priority}">${task.priority}</span></td>
       <td>${resultStatusBadge}</td>
+      <td style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--accent-cyan);">${escapeHtml(tokensStr)}</td>
       <td style="font-family: var(--font-mono); font-size: 0.8rem;">${escapeHtml(durationText)}</td>
-      <td style="max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-muted); font-size: 0.8rem;">
+      <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-muted); font-size: 0.8rem;">
         ${escapeHtml(summaryText)}
       </td>
-      <td style="font-size: 0.75rem; color: var(--text-dim);">${escapeHtml(lastRun)}</td>
       <td>
         <div style="display: flex; gap: 0.4rem;">
-          <button type="button" class="btn btn-sm btn-ghost" data-action="view-results" title="Inspect Results">Results</button>
+          ${task.status === "approval_pending" ? `
+            <button type="button" class="btn btn-sm btn-primary" data-action="sign-off" title="Sign Off">✍️</button>
+          ` : ""}
+          <button type="button" class="btn btn-sm btn-ghost" data-action="view-results" title="Inspect Results">Logs</button>
           <button type="button" class="btn btn-sm btn-secondary" data-action="run-task" title="Run Task">▶</button>
         </div>
       </td>
@@ -716,19 +1204,321 @@ function renderTableView() {
     tr.querySelector(".table-task-link").addEventListener("click", () => openResultsDrawer(task.id));
     tr.querySelector('[data-action="view-results"]').addEventListener("click", () => openResultsDrawer(task.id));
     tr.querySelector('[data-action="run-task"]').addEventListener("click", () => simulateWorkerRun(task.id));
+    const signOffBtn = tr.querySelector('[data-action="sign-off"]');
+    if (signOffBtn) {
+      signOffBtn.addEventListener("click", () => openApprovalModal(task.id));
+    }
 
     dom.matrixTableBody.appendChild(tr);
+  });
+}
+
+// ============================================================================
+// Directives Desk Renderer (Boardroom)
+// ============================================================================
+function renderDirectives() {
+  if (!dom.directivesGrid) return;
+  dom.directivesGrid.innerHTML = "";
+
+  const directives = appState.getDirectives();
+  if (directives.length === 0) {
+    dom.directivesGrid.innerHTML = `
+      <div style="grid-column: 1 / -1; padding: 2rem; text-align: center; color: var(--text-dim); background: var(--bg-card); border-radius: var(--radius-md);">
+        No strategic directives issued yet. Click "Dispatch Directive" to instruct the CEO Agent.
+      </div>
+    `;
+    return;
+  }
+
+  directives.forEach(dir => {
+    const card = document.createElement("div");
+    card.className = "directive-card";
+
+    // Calculate subtask completion
+    const allTasks = appState.getAllTasks();
+    const childTasks = allTasks.filter(t => dir.childTaskIds && dir.childTaskIds.includes(t.id));
+    const doneCount = childTasks.filter(t => t.status === "done").length;
+    const totalCount = childTasks.length;
+    const pct = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : (dir.status === "completed" ? 100 : 25);
+
+    const statusBadge = dir.status === "completed"
+      ? `<span class="badge badge-accent">Completed</span>`
+      : `<span class="badge badge-warning">CEO Executing</span>`;
+
+    card.innerHTML = `
+      <div class="directive-card-header">
+        <span class="directive-id-badge">${escapeHtml(dir.id)}</span>
+        <div style="display:flex; gap:0.4rem; align-items:center;">
+          <span class="priority-badge priority-${dir.priority}">${dir.priority}</span>
+          ${statusBadge}
+        </div>
+      </div>
+      <h3 class="directive-title">${escapeHtml(dir.title)}</h3>
+      <p class="directive-desc">${escapeHtml(dir.context || "No context provided.")}</p>
+      
+      <div class="directive-progress-wrap">
+        <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:var(--text-muted);">
+          <span>Execution Progress</span>
+          <span>${doneCount}/${totalCount} Sub-tasks (${pct}%)</span>
+        </div>
+        <div class="directive-progress-bar">
+          <div class="directive-progress-fill" style="width: ${pct}%;"></div>
+        </div>
+      </div>
+
+      ${dir.ceoReport ? `
+        <div style="background:var(--bg-tertiary); padding:0.75rem; border-radius:var(--radius-sm); border:1px solid var(--border-subtle); font-size:0.78rem; color:var(--text-muted);">
+          <strong style="color:var(--accent-cyan); display:block; margin-bottom:0.25rem;">Executive Briefing</strong>
+          ${escapeHtml(dir.ceoReport)}
+        </div>
+      ` : ""}
+
+      <div class="directive-meta-row">
+        <span>Created: ${escapeHtml(dir.createdAt)}</span>
+        <span>Budget: ${escapeHtml(dir.budgetAllocated)} • Spend: $${(dir.costUsd || 0).toFixed(2)}</span>
+      </div>
+    `;
+
+    dom.directivesGrid.appendChild(card);
+  });
+}
+
+// ============================================================================
+// Approvals Desk Renderer (One-Way Doors Dedicated Queue)
+// ============================================================================
+function renderApprovalsDesk() {
+  if (!dom.approvalsDeskGrid) return;
+  dom.approvalsDeskGrid.innerHTML = "";
+
+  const approvals = appState.getApprovals();
+  if (approvals.length === 0) {
+    dom.approvalsDeskGrid.innerHTML = `
+      <div style="grid-column: 1 / -1; padding: 2.5rem; text-align: center; color: var(--text-dim); background: var(--bg-card); border-radius: var(--radius-md); border: 1px dashed var(--border-medium);">
+        <div style="font-size: 2rem; margin-bottom: 0.5rem;">🛡️</div>
+        <h3 style="color: var(--text-main); margin-bottom: 0.25rem;">No Pending One-Way Actions</h3>
+        <p style="font-size: 0.85rem;">All autonomous agent tasks are executing within two-way reversible parameters.</p>
+      </div>
+    `;
+    return;
+  }
+
+  approvals.forEach(task => {
+    const card = document.createElement("div");
+    card.className = "approval-card";
+
+    const agent = task.worker || (task.ownerAgent ? task.ownerAgent.toUpperCase() : "CTO Agent");
+    const blast = task.payload && task.payload.blastRadius ? task.payload.blastRadius : "Modifies repository or external systems";
+
+    card.innerHTML = `
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span class="task-id-badge">${escapeHtml(task.id)}</span>
+        <span class="badge-one-way">⚠️ ONE-WAY DOOR</span>
+      </div>
+      <h3 style="font-size:1.05rem; font-weight:600; color:var(--text-main);">${escapeHtml(task.title)}</h3>
+      <p style="font-size:0.82rem; color:var(--text-muted);">${escapeHtml(task.description || "")}</p>
+      
+      <div style="background:rgba(245, 158, 11, 0.1); border:1px solid rgba(245, 158, 11, 0.3); padding:0.65rem 0.85rem; border-radius:var(--radius-sm); font-size:0.75rem; color:#fbbf24;">
+        <strong>Blast Radius:</strong> ${escapeHtml(blast)}
+      </div>
+
+      <div style="font-size:0.75rem; color:var(--text-dim); display:flex; justify-content:space-between;">
+        <span>Agent: <strong>${escapeHtml(agent)}</strong></span>
+        <span>Tokens: ${(task.tokensUsed || 0).toLocaleString()}</span>
+      </div>
+
+      <div style="display:flex; gap:0.5rem; margin-top:0.5rem;">
+        <button type="button" class="btn btn-primary" style="flex:1;" data-action="open-modal">
+          ✍️ Review &amp; Sign Off
+        </button>
+      </div>
+    `;
+
+    card.querySelector('[data-action="open-modal"]').addEventListener("click", () => {
+      openApprovalModal(task.id);
+    });
+
+    dom.approvalsDeskGrid.appendChild(card);
+  });
+}
+
+// ============================================================================
+// Agent Roster Renderer (Org Topology)
+// ============================================================================
+function renderAgentRoster() {
+  if (!dom.agentsGrid) return;
+  dom.agentsGrid.innerHTML = "";
+
+  appState.agents.forEach(agent => {
+    const card = document.createElement("div");
+    card.className = "agent-card";
+
+    let statusClass = "text-muted";
+    if (agent.status === "Reasoning" || agent.status === "Coding") statusClass = "text-warning";
+    if (agent.status === "Auditing") statusClass = "text-accent";
+    if (agent.status === "Idle") statusClass = "text-dim";
+
+    const toolsHtml = agent.tools
+      .map(tool => `<span class="tool-tag">${escapeHtml(tool)}</span>`)
+      .join("");
+
+    card.innerHTML = `
+      <div class="agent-card-header">
+        <div class="agent-avatar">${agent.avatar}</div>
+        <div>
+          <h4 class="agent-name">${escapeHtml(agent.name)}</h4>
+          <p class="agent-role">${escapeHtml(agent.role)}</p>
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; font-size:0.75rem; padding:0.5rem 0; border-top:1px solid var(--border-subtle); border-bottom:1px solid var(--border-subtle);">
+        <span>Reports to: <strong style="color:var(--text-main);">${escapeHtml(agent.reportsTo)}</strong></span>
+        <span>Status: <strong class="${statusClass}">● ${escapeHtml(agent.status)}</strong></span>
+      </div>
+
+      <div style="font-size:0.75rem; color:var(--text-dim);">
+        <div style="margin-bottom:0.25rem;">Active Task / Lease:</div>
+        <div style="font-family:var(--font-mono); color:var(--text-muted); background:var(--bg-tertiary); padding:0.35rem 0.5rem; border-radius:var(--radius-sm); border:1px solid var(--border-subtle);">
+          ${escapeHtml(agent.activeTask)}
+        </div>
+      </div>
+
+      <div style="font-size:0.75rem;">
+        <span style="color:var(--text-dim); display:block; margin-bottom:0.3rem;">Authorized System Tools:</span>
+        <div class="agent-tools-list">${toolsHtml}</div>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; font-size:0.72rem; color:var(--text-dim); margin-top:auto; padding-top:0.5rem;">
+        <span>Daily Budget: ${escapeHtml(agent.budget)}</span>
+        <span>Tokens: ${(agent.tokensUsed || 0).toLocaleString()}</span>
+      </div>
+    `;
+
+    dom.agentsGrid.appendChild(card);
   });
 }
 
 function renderAll() {
   renderMetrics();
   updateWorkerFilterOptions();
+
+  // Hide all sections first
+  dom.kanbanBoard.classList.add("hidden");
+  dom.tableViewContainer.classList.add("hidden");
+  dom.approvalsSection.classList.add("hidden");
+  dom.directivesSection.classList.add("hidden");
+  dom.agentsSection.classList.add("hidden");
+
+  // Show active view
   if (appState.currentView === "kanban") {
+    dom.kanbanBoard.classList.remove("hidden");
     renderKanban();
-  } else {
+  } else if (appState.currentView === "table") {
+    dom.tableViewContainer.classList.remove("hidden");
     renderTableView();
+  } else if (appState.currentView === "approvals") {
+    dom.approvalsSection.classList.remove("hidden");
+    renderApprovalsDesk();
+  } else if (appState.currentView === "directives") {
+    dom.directivesSection.classList.remove("hidden");
+    renderDirectives();
+  } else if (appState.currentView === "agents") {
+    dom.agentsSection.classList.remove("hidden");
+    renderAgentRoster();
   }
+}
+
+// ============================================================================
+// One-Way Door Approval Modal Logic
+// ============================================================================
+function openApprovalModal(taskId) {
+  const task = appState.getTaskById(taskId);
+  if (!task) return;
+
+  currentApprovalTaskId = taskId;
+  dom.approvalTaskId.textContent = task.id;
+  dom.approvalActionName.textContent = task.title;
+  dom.approvalRequestingAgent.textContent = task.worker || (task.ownerAgent ? task.ownerAgent.toUpperCase() : "CTO Agent");
+
+  const tokens = task.tokensUsed ? `${(task.tokensUsed / 1000).toFixed(1)}k (~$${(task.costUsd || 0).toFixed(2)})` : "16.4k (~$0.33)";
+  dom.approvalTokenCost.textContent = tokens;
+
+  if (task.payload && task.payload.blastRadius) {
+    dom.approvalBlastRadiusDesc.textContent = task.payload.blastRadius;
+  } else {
+    dom.approvalBlastRadiusDesc.textContent = "This action modifies external state, merges code to production, or spends funds. Execution is paused.";
+  }
+
+  // Acceptance criteria list
+  dom.approvalCriteriaList.innerHTML = "";
+  const criteria = task.acceptanceCriteria || [
+    "Reviewer Agent verified against security standards",
+    "Test suite completed cleanly (Exit 0)",
+    "One-Way Door explicit Chairman authorization"
+  ];
+
+  criteria.forEach(item => {
+    const div = document.createElement("div");
+    div.className = "criteria-item";
+    div.innerHTML = `
+      <input type="checkbox" checked disabled>
+      <span>${escapeHtml(item)}</span>
+    `;
+    dom.approvalCriteriaList.appendChild(div);
+  });
+
+  // Diff / Payload preview
+  const payloadStr = JSON.stringify(task.payload || task.result || {}, null, 2);
+  dom.approvalPayloadDiff.textContent = payloadStr;
+  dom.inputApprovalNotes.value = "";
+
+  dom.approvalModal.showModal();
+}
+
+// ============================================================================
+// Directives Modal Logic
+// ============================================================================
+function openDirectiveModal() {
+  dom.inputDirectiveTitle.value = "";
+  dom.selectDirectivePriority.value = "high";
+  dom.inputDirectiveBudget.value = "$5.00";
+  dom.inputDirectiveContext.value = "";
+  dom.directiveModal.showModal();
+}
+
+function handleDirectiveFormSubmit(e) {
+  e.preventDefault();
+  const title = dom.inputDirectiveTitle.value.trim();
+  if (!title) return;
+
+  const newDir = appState.addDirective({
+    title,
+    priority: dom.selectDirectivePriority.value,
+    budgetAllocated: dom.inputDirectiveBudget.value.trim() || "$5.00",
+    context: dom.inputDirectiveContext.value.trim()
+  });
+
+  dom.directiveModal.close();
+
+  // Simulate CEO breaking it down into 2 initial tasks
+  setTimeout(() => {
+    const taskA = appState.addTask({
+      title: `Plan & Spec: ${title}`,
+      description: `CEO & CTO technical decomposition for directive ${newDir.id}`,
+      door: "two_way",
+      ownerAgent: "cto",
+      worker: "CTO Agent",
+      directiveId: newDir.id,
+      priority: newDir.priority,
+      tags: ["spec", "architecture"]
+    });
+    newDir.childTaskIds.push(taskA.id);
+    appState.saveDirectives();
+    renderAll();
+    showToast(`CEO Agent processed ${newDir.id} and created ${taskA.id}`, "success");
+  }, 1200);
+
+  renderAll();
+  showToast(`Dispatched Directive ${newDir.id} to CEO Agent`, "success");
 }
 
 // ============================================================================
@@ -740,242 +1530,449 @@ function openResultsDrawer(taskId) {
 
   appState.activeTaskId = taskId;
 
-  // Set Header Information
+  // Header info
   dom.drawerTaskId.textContent = task.id;
   dom.drawerTaskTitle.textContent = task.title;
   dom.drawerTaskDesc.textContent = task.description || "No description provided.";
   dom.drawerStatusPill.textContent = task.status;
   dom.drawerStatusPill.className = `status-pill status-${task.status}`;
 
-  // Set Result Badge & Metric Cards
+  // Metrics and result
   if (task.result) {
-    const resStatus = task.result.status;
+    const resStatus = task.result.status || "none";
     dom.drawerResultBadge.textContent = resStatus.toUpperCase();
     dom.drawerResultBadge.className = `result-badge ${resStatus}`;
     dom.statDuration.textContent = task.result.duration || "—";
-    dom.statWorker.textContent = task.worker || "—";
+    dom.statWorker.textContent = task.worker || (task.ownerAgent ? task.ownerAgent.toUpperCase() : "—");
     dom.statRecords.textContent = task.result.recordsCount !== undefined ? `${task.result.recordsCount} items` : "—";
     dom.statExitCode.textContent = `Exit ${task.result.exitCode ?? 0} • ${task.result.memoryUsage || "Normal"}`;
 
-    // Output Artifacts
     const jsonStr = JSON.stringify(task.result.data || task.result, null, 2);
     dom.artifactJsonContent.textContent = jsonStr;
-
-    // Terminal Logs
     renderTerminalLogs(task.result.logs || []);
-
-    // Linked Resources
     renderResourceLinks(task.result.links || []);
   } else {
-    dom.drawerResultBadge.textContent = "NO RESULT YET";
+    dom.drawerResultBadge.textContent = "QUEUED";
     dom.drawerResultBadge.className = "result-badge none";
     dom.statDuration.textContent = "—";
     dom.statWorker.textContent = task.worker || "—";
     dom.statRecords.textContent = "0 items";
     dom.statExitCode.textContent = "Exit —";
 
-    dom.artifactJsonContent.textContent = "// No output data generated yet.\n// Click 'Run Worker Now' or attach a result manually.";
+    dom.artifactJsonContent.textContent = "// No output data generated yet.\n// Click 'Run Worker Now' or attach results.";
     renderTerminalLogs([
       `[${new Date().toLocaleTimeString()}] [system] Task initialized in ${task.status} state`,
-      `[${new Date().toLocaleTimeString()}] [system] Waiting for worker dispatch...`
+      `[${new Date().toLocaleTimeString()}] [system] Waiting for agent dispatch...`
     ]);
     renderResourceLinks([]);
   }
 
-  // Task Parameters / Payload
-  dom.taskPayloadContent.textContent = JSON.stringify(task.payload || {}, null, 2);
+  // Parameters
+  const payloadStr = JSON.stringify(task.payload || {}, null, 2);
+  dom.taskPayloadContent.textContent = payloadStr;
 
-  // Show Drawer
+  // Open drawer
   dom.drawer.classList.add("open");
-  dom.drawer.setAttribute("aria-hidden", "false");
-  document.body.style.overflow = "hidden";
+  dom.drawerBackdrop.classList.add("open");
 }
 
 function closeResultsDrawer() {
   dom.drawer.classList.remove("open");
-  dom.drawer.setAttribute("aria-hidden", "true");
-  document.body.style.overflow = "";
+  dom.drawerBackdrop.classList.remove("open");
   appState.activeTaskId = null;
 }
 
 function renderTerminalLogs(logs) {
   dom.terminalLogs.innerHTML = "";
-  dom.logCount.textContent = logs.length;
-
-  if (logs.length === 0) {
-    dom.terminalLogs.innerHTML = `<div class="terminal-line"><span class="log-dim">[empty]</span> No log records.</div>`;
+  if (!logs || logs.length === 0) {
+    dom.terminalLogs.innerHTML = `<div class="terminal-line"><span class="log-dim">[system]</span> No log records found.</div>`;
     return;
   }
 
   logs.forEach(line => {
-    const lineEl = document.createElement("div");
-    lineEl.className = "terminal-line";
+    const el = document.createElement("div");
+    el.className = "terminal-line";
 
-    let formatted = escapeHtml(line);
-    formatted = formatted
-      .replace(/(\[INFO\])/g, '<span class="log-info">$1</span>')
-      .replace(/(\[SUCCESS\])/g, '<span class="log-success">$1</span>')
-      .replace(/(\[WARN\])/g, '<span class="log-warn">$1</span>')
-      .replace(/(\[ERROR\])/g, '<span class="log-error">$1</span>')
-      .replace(/(\[\d{2}:\d{2}:\d{2}\])/g, '<span class="log-dim">$1</span>');
+    let colorClass = "log-info";
+    if (line.includes("[ERROR]") || line.includes("failed")) colorClass = "log-error";
+    if (line.includes("[WARN]")) colorClass = "log-warn";
+    if (line.includes("[SUCCESS]")) colorClass = "log-success";
+    if (line.includes("[CHAIRMAN")) colorClass = "log-warn";
 
-    lineEl.innerHTML = formatted;
-    dom.terminalLogs.appendChild(lineEl);
+    el.innerHTML = `<span class="${colorClass}">${escapeHtml(line)}</span>`;
+    dom.terminalLogs.appendChild(el);
   });
 
-  // Scroll to bottom of logs
   dom.terminalLogs.scrollTop = dom.terminalLogs.scrollHeight;
 }
 
 function renderResourceLinks(links) {
   dom.resourcesList.innerHTML = "";
   if (!links || links.length === 0) {
-    dom.resourcesList.innerHTML = `<li class="empty-list-msg">No external resources linked to this task yet.</li>`;
+    dom.resourcesList.innerHTML = `<li class="empty-list-msg">No external artifacts linked yet.</li>`;
     return;
   }
 
-  links.forEach((link, idx) => {
+  links.forEach(l => {
     const li = document.createElement("li");
     li.className = "resource-item";
     li.innerHTML = `
-      <div class="resource-link-info">
-        <span class="resource-label">${escapeHtml(link.label)}</span>
-        <a href="${escapeHtml(link.url)}" target="_blank" rel="noopener noreferrer" class="resource-url">
-          ${escapeHtml(link.url)} &nearr;
-        </a>
+      <div class="resource-info">
+        <span class="resource-label">${escapeHtml(l.label)}</span>
+        <span class="resource-url">${escapeHtml(l.url)}</span>
       </div>
-      <button type="button" class="btn-remove-resource" data-idx="${idx}" title="Remove link">&times;</button>
+      <a href="${escapeHtml(l.url)}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-ghost">Open ↗</a>
     `;
-
-    li.querySelector(".btn-remove-resource").addEventListener("click", () => {
-      removeResourceLink(idx);
-    });
-
     dom.resourcesList.appendChild(li);
   });
 }
 
-function removeResourceLink(index) {
-  if (!appState.activeTaskId) return;
-  const task = appState.getTaskById(appState.activeTaskId);
-  if (task && task.result && task.result.links) {
-    task.result.links.splice(index, 1);
-    appState.saveTasks();
-    renderResourceLinks(task.result.links);
-    showToast("Resource link removed", "warning");
-  }
-}
-
 // ============================================================================
-// Worker Simulation Engine (Real-Time Dynamic Feedback)
+// Task Modal Logic (Create & Edit)
 // ============================================================================
-function simulateWorkerRun(taskId) {
-  const task = appState.getTaskById(taskId);
-  if (!task) return;
+function openTaskModal(taskId = null, defaultStatus = "backlog") {
+  dom.taskForm.reset();
+  dom.taskFormId.value = taskId || "";
 
-  showToast(`Worker dispatched for ${task.id}...`, "warning");
+  // Populate directives dropdown
+  dom.selectTaskDirective.innerHTML = '<option value="">None (Independent Task)</option>';
+  appState.getDirectives().forEach(dir => {
+    const opt = document.createElement("option");
+    opt.value = dir.id;
+    opt.textContent = `${dir.id}: ${dir.title}`;
+    dom.selectTaskDirective.appendChild(opt);
+  });
 
-  // Move task to 'running'
-  appState.updateTaskStatus(taskId, "running");
-  task.result = {
-    status: "running",
-    exitCode: "—",
-    duration: "Running...",
-    summary: "Worker execution in progress...",
-    recordsCount: 0,
-    memoryUsage: "Allocating...",
-    executedAt: new Date().toLocaleTimeString(),
-    data: { status: "running" },
-    logs: [
-      `[${new Date().toLocaleTimeString()}] [INFO] Assigned runner on node: ${task.worker || "worker-node-us-east-1"}`,
-      `[${new Date().toLocaleTimeString()}] [INFO] Injecting input configuration payload...`,
-      `[${new Date().toLocaleTimeString()}] [INFO] Process container spinup complete (PID: ${Math.floor(Math.random() * 8000 + 1000)})`
-    ],
-    links: task.result ? task.result.links : []
-  };
-  appState.saveTasks();
-  renderAll();
+  if (taskId) {
+    const task = appState.getTaskById(taskId);
+    if (!task) return;
 
-  if (appState.activeTaskId === taskId) {
-    openResultsDrawer(taskId);
+    dom.modalTaskTitle.textContent = `Edit Task ${task.id}`;
+    dom.inputTaskTitle.value = task.title;
+    dom.selectTaskStatus.value = task.status;
+    dom.selectTaskDoor.value = task.door || "two_way";
+    dom.selectTaskAgent.value = task.ownerAgent || "cto";
+    dom.selectTaskPriority.value = task.priority;
+    dom.selectTaskDirective.value = task.directiveId || "";
+    dom.inputTaskTags.value = (task.tags || []).join(", ");
+    dom.inputTaskDesc.value = task.description || "";
+    dom.inputTaskCriteria.value = (task.acceptanceCriteria || []).join("\n");
+    dom.inputTaskPayload.value = JSON.stringify(task.payload || {}, null, 2);
+  } else {
+    dom.modalTaskTitle.textContent = "Create New Task";
+    dom.selectTaskStatus.value = defaultStatus;
+    dom.selectTaskDoor.value = "two_way";
+    dom.selectTaskAgent.value = "cto";
+    dom.selectTaskPriority.value = "medium";
+    dom.inputTaskPayload.value = '{\n  "budgetTokens": 20000\n}';
   }
 
-  // Simulate progress step 1
-  setTimeout(() => {
-    if (!task.result) return;
-    const timeStr = new Date().toLocaleTimeString();
-    task.result.logs.push(`[${timeStr}] [INFO] Processing input stream: records streaming cleanly...`);
-    task.result.logs.push(`[${timeStr}] [INFO] Memory consumption: 88MB, CPU load: 24%`);
-    appState.saveTasks();
-    if (appState.activeTaskId === taskId) {
-      renderTerminalLogs(task.result.logs);
-    }
-  }, 900);
-
-  // Simulate progress step 2 (completion)
-  setTimeout(() => {
-    const finishTime = new Date().toLocaleTimeString();
-    const isSuccess = Math.random() > 0.15; // 85% success rate
-    const elapsed = (Math.random() * 2 + 0.8).toFixed(2);
-    const count = Math.floor(Math.random() * 900 + 150);
-
-    if (isSuccess) {
-      task.status = "done";
-      task.result.status = "success";
-      task.result.exitCode = 0;
-      task.result.duration = `${elapsed}s`;
-      task.result.recordsCount = count;
-      task.result.memoryUsage = "112MB";
-      task.result.summary = `Processed ${count} items with exit code 0`;
-      task.result.data = {
-        status: "completed",
-        itemsGenerated: count,
-        checksum: `0x${Math.random().toString(16).substring(2, 10).toUpperCase()}`,
-        destination: `s3://automation-worker-data/runs/${task.id.toLowerCase()}/output.json`,
-        latencyMs: Math.round(elapsed * 1000)
-      };
-      task.result.logs.push(`[${finishTime}] [SUCCESS] Job finished successfully in ${elapsed}s`);
-      task.result.logs.push(`[${finishTime}] [SUCCESS] Output artifact flushed to object storage (Exit 0)`);
-      showToast(`${task.id} finished successfully!`, "success");
-    } else {
-      task.status = "failed";
-      task.result.status = "failure";
-      task.result.exitCode = 1;
-      task.result.duration = `${elapsed}s`;
-      task.result.recordsCount = 0;
-      task.result.memoryUsage = "140MB";
-      task.result.summary = `Process exited with code 1: Connection reset`;
-      task.result.data = {
-        error: "ConnectionResetByPeer",
-        exitCode: 1,
-        retriesRemaining: 0
-      };
-      task.result.logs.push(`[${finishTime}] [ERROR] Unexpected socket termination from peer service`);
-      task.result.logs.push(`[${finishTime}] [ERROR] Process terminated with Exit Code 1`);
-      showToast(`${task.id} failed with exit code 1!`, "danger");
-    }
-
-    appState.saveTasks();
-    renderAll();
-
-    if (appState.activeTaskId === taskId) {
-      openResultsDrawer(taskId);
-    }
-  }, 2200);
+  dom.taskModal.showModal();
 }
 
-function simulateRunAllQueued() {
-  const queued = appState.tasks.filter(t => t.status === "backlog");
-  if (queued.length === 0) {
-    showToast("No queued tasks in Backlog to execute.", "warning");
+function handleTaskFormSubmit(e) {
+  e.preventDefault();
+  const id = dom.taskFormId.value;
+  const title = dom.inputTaskTitle.value.trim();
+  if (!title) return;
+
+  let payload = {};
+  try {
+    const raw = dom.inputTaskPayload.value.trim();
+    if (raw) payload = JSON.parse(raw);
+  } catch (err) {
+    showToast("Invalid JSON in Task Payload: " + err.message, "danger");
     return;
   }
 
-  showToast(`Queueing ${queued.length} task(s) to worker pool...`, "success");
-  queued.forEach((t, i) => {
+  const tags = dom.inputTaskTags.value
+    .split(",")
+    .map(s => s.trim().replace(/^#/, ""))
+    .filter(Boolean);
+
+  const criteria = dom.inputTaskCriteria.value
+    .split("\n")
+    .map(s => s.trim())
+    .filter(Boolean);
+
+  const agentVal = dom.selectTaskAgent.value;
+  let workerName = "CTO Agent";
+  if (agentVal === "ceo") workerName = "CEO Agent";
+  if (agentVal === "dev-1") workerName = "Dev Worker 01";
+  if (agentVal === "dev-2") workerName = "Dev Worker 02";
+  if (agentVal === "reviewer") workerName = "Reviewer Agent";
+
+  const taskData = {
+    title,
+    description: dom.inputTaskDesc.value.trim(),
+    status: dom.selectTaskStatus.value,
+    door: dom.selectTaskDoor.value,
+    ownerAgent: agentVal,
+    worker: workerName,
+    priority: dom.selectTaskPriority.value,
+    directiveId: dom.selectTaskDirective.value || null,
+    tags,
+    acceptanceCriteria: criteria,
+    payload
+  };
+
+  if (id) {
+    appState.updateTask(id, taskData);
+    showToast(`Updated task ${id}`, "success");
+    if (appState.activeTaskId === id) openResultsDrawer(id);
+  } else {
+    const newTask = appState.addTask(taskData);
+    showToast(`Created task ${newTask.id}`, "success");
+  }
+
+  dom.taskModal.close();
+  renderAll();
+}
+
+// Result Modal Logic
+function openResultModal(taskId) {
+  const task = appState.getTaskById(taskId);
+  if (!task) return;
+
+  dom.resultFormTaskId.value = taskId;
+  if (task.result) {
+    dom.selectResultStatus.value = task.result.status || "success";
+    dom.inputResultDuration.value = task.result.duration || "1.82s";
+    dom.inputResultSummary.value = task.result.summary || "";
+    dom.inputResultExitCode.value = task.result.exitCode ?? 0;
+    dom.inputResultJson.value = JSON.stringify(task.result.data || {}, null, 2);
+    dom.inputResultLogs.value = (task.result.logs || []).join("\n");
+  } else {
+    dom.selectResultStatus.value = "success";
+    dom.inputResultDuration.value = "1.82s";
+    dom.inputResultSummary.value = "Execution verified cleanly";
+    dom.inputResultExitCode.value = "0";
+    dom.inputResultJson.value = '{\n  "status": "completed"\n}';
+    dom.inputResultLogs.value = "[INFO] Agent session booted\n[SUCCESS] Task completed cleanly.";
+  }
+
+  dom.resultModal.showModal();
+}
+
+function handleResultFormSubmit(e) {
+  e.preventDefault();
+  const id = dom.resultFormTaskId.value;
+  if (!id) return;
+
+  let jsonData = {};
+  try {
+    const raw = dom.inputResultJson.value.trim();
+    if (raw) jsonData = JSON.parse(raw);
+  } catch (err) {
+    showToast("Invalid JSON in Result Data: " + err.message, "danger");
+    return;
+  }
+
+  const logs = dom.inputResultLogs.value
+    .split("\n")
+    .map(s => s.trim())
+    .filter(Boolean);
+
+  const status = dom.selectResultStatus.value;
+  const resultData = {
+    status,
+    duration: dom.inputResultDuration.value.trim() || "1.5s",
+    summary: dom.inputResultSummary.value.trim() || "Manual result attached",
+    exitCode: parseInt(dom.inputResultExitCode.value.trim(), 10) || 0,
+    recordsCount: 1,
+    memoryUsage: "48MB",
+    executedAt: new Date().toISOString().replace("T", " ").substring(0, 19),
+    data: jsonData,
+    logs,
+    links: []
+  };
+
+  appState.attachResult(id, resultData);
+  if (status === "success") appState.updateTaskStatus(id, "done");
+  if (status === "failure") appState.updateTaskStatus(id, "failed");
+
+  dom.resultModal.close();
+  renderAll();
+  if (appState.activeTaskId === id) openResultsDrawer(id);
+  showToast(`Attached result to ${id}`, "success");
+}
+
+// Link Modal Logic
+function openLinkModal() {
+  dom.linkForm.reset();
+  dom.linkModal.showModal();
+}
+
+function handleLinkFormSubmit(e) {
+  e.preventDefault();
+  const taskId = appState.activeTaskId;
+  if (!taskId) return;
+
+  const label = dom.inputLinkLabel.value.trim();
+  const url = dom.inputLinkUrl.value.trim();
+  if (!label || !url) return;
+
+  const task = appState.getTaskById(taskId);
+  if (!task) return;
+
+  if (!task.result) {
+    task.result = {
+      status: "partial",
+      duration: "—",
+      summary: "External resource attached",
+      logs: [],
+      links: []
+    };
+  }
+
+  task.result.links = task.result.links || [];
+  task.result.links.push({ label, url });
+  appState.saveTasks();
+
+  dom.linkModal.close();
+  renderResourceLinks(task.result.links);
+  showToast("Linked external artifact", "success");
+}
+
+// ============================================================================
+// Multi-Agent Simulation Engine
+// ============================================================================
+function simulateWorkerRun(taskId) {
+  if (appState.killSwitchActive) {
+    showToast("⚠️ Global Kill Switch Active: System is frozen. Deactivate to run.", "warning");
+    return;
+  }
+
+  const task = appState.getTaskById(taskId);
+  if (!task) return;
+
+  appState.updateTaskStatus(taskId, "running");
+  renderAll();
+  showToast(`⚡ Dispatched ${task.id} to ${task.worker || "Agent"}...`, "info");
+
+  const isOneWay = (task.door === "one_way");
+  const isFailChance = Math.random() < 0.15; // 15% random failure rate
+
+  setTimeout(() => {
+    if (appState.killSwitchActive) {
+      showToast(`Task ${taskId} halted mid-execution by Kill Switch.`, "warning");
+      return;
+    }
+
+    const duration = (Math.random() * 2 + 1).toFixed(2) + "s";
+    const ts = new Date().toLocaleTimeString();
+
+    if (isFailChance && !isOneWay) {
+      // Simulate failure
+      task.status = "failed";
+      task.tokensUsed = (task.tokensUsed || 0) + 4200;
+      task.costUsd = (task.costUsd || 0) + 0.08;
+      task.result = {
+        status: "failure",
+        exitCode: 1,
+        duration,
+        summary: "Unit test assertion failed: Error on mock dependency timeout",
+        recordsCount: 0,
+        memoryUsage: "52MB",
+        executedAt: new Date().toISOString().replace("T", " ").substring(0, 19),
+        data: { error: "AssertionError: Expected Exit 0 but got 1", attempt: 1 },
+        logs: [
+          `[${ts}] [INFO] Container booted for ${task.worker}`,
+          `[${ts}] [INFO] Running automated test suite...`,
+          `[${ts}] [ERROR] AssertionError on test_security_invariants()`,
+          `[${ts}] [ERROR] Task failed. Escalation recorded.`
+        ],
+        links: []
+      };
+      appState.saveTasks();
+      renderAll();
+      showToast(`❌ Task ${taskId} failed verification`, "danger");
+      if (appState.activeTaskId === taskId) openResultsDrawer(taskId);
+      return;
+    }
+
+    if (isOneWay) {
+      // One-Way Door: Complete implementation, then HALT at approval gate
+      task.status = "approval_pending";
+      task.tokensUsed = (task.tokensUsed || 0) + 12800;
+      task.costUsd = (task.costUsd || 0) + 0.26;
+      task.result = {
+        status: "partial",
+        exitCode: "PAUSED",
+        duration,
+        summary: "Work complete. Halted at One-Way Door Gate: Awaiting Chairman sign-off.",
+        recordsCount: 1,
+        memoryUsage: "64MB",
+        executedAt: new Date().toISOString().replace("T", " ").substring(0, 19),
+        data: {
+          action: task.title,
+          testsPassed: true,
+          criteriaScore: "100%",
+          gateType: "ONE_WAY_DOOR"
+        },
+        logs: [
+          `[${ts}] [INFO] ${task.worker} executed implementation in worktree`,
+          `[${ts}] [INFO] Reviewer Agent: Acceptance criteria verified. Tests exit 0.`,
+          `[${ts}] [WARN] Irreversible action detected (One-Way Door).`,
+          `[${ts}] [WARN] Execution halted. Transferred to Chairman Approvals Desk.`
+        ],
+        links: []
+      };
+      appState.saveTasks();
+      renderAll();
+      showToast(`⚠️ Action halted: ${task.id} requires Chairman One-Way sign-off!`, "warning");
+      if (appState.activeTaskId === taskId) openResultsDrawer(taskId);
+      return;
+    }
+
+    // Standard Two-Way Task: Completed autonomously
+    task.status = "done";
+    task.tokensUsed = (task.tokensUsed || 0) + 9400;
+    task.costUsd = (task.costUsd || 0) + 0.19;
+    task.result = {
+      status: "success",
+      exitCode: 0,
+      duration,
+      summary: "Autonomous 2-Way execution completed cleanly (Exit 0)",
+      recordsCount: 1,
+      memoryUsage: "48MB",
+      executedAt: new Date().toISOString().replace("T", " ").substring(0, 19),
+      data: {
+        completed: true,
+        verificationStatus: "Verified 2-Way Reversible",
+        exitCode: 0
+      },
+      logs: [
+        `[${ts}] [INFO] Worker container booted for ${task.worker}`,
+        `[${ts}] [INFO] Reversible 2-Way action executed`,
+        `[${ts}] [SUCCESS] Acceptance criteria verified. Status: Done.`
+      ],
+      links: []
+    };
+    appState.saveTasks();
+    renderAll();
+    showToast(`✅ Finished task ${task.id} cleanly`, "success");
+    if (appState.activeTaskId === taskId) openResultsDrawer(taskId);
+  }, 1600);
+}
+
+function simulateRunAllQueued() {
+  if (appState.killSwitchActive) {
+    showToast("⚠️ Kill Switch Active: Deactivate to execute queued tasks.", "warning");
+    return;
+  }
+
+  const queued = appState.getAllTasks().filter(t => t.status === "backlog");
+  if (queued.length === 0) {
+    showToast("No queued tasks to run.", "info");
+    return;
+  }
+
+  showToast(`Dispatching ${queued.length} queued tasks to agent pool...`, "info");
+  queued.forEach((task, idx) => {
     setTimeout(() => {
-      simulateWorkerRun(t.id);
-    }, i * 700);
+      simulateWorkerRun(task.id);
+    }, idx * 600);
   });
 }
 
@@ -998,262 +1995,31 @@ function handleDragEnd() {
 }
 
 function setupKanbanDropZones() {
-  const columns = document.querySelectorAll(".kanban-column");
-  columns.forEach(col => {
+  document.querySelectorAll(".kanban-column").forEach(col => {
     col.addEventListener("dragover", e => {
       e.preventDefault();
       e.dataTransfer.dropEffect = "move";
       col.classList.add("drag-over");
     });
 
-    col.addEventListener("dragleave", e => {
-      // Check if genuinely leaving the column
-      if (!col.contains(e.relatedTarget)) {
-        col.classList.remove("drag-over");
-      }
+    col.addEventListener("dragleave", () => {
+      col.classList.remove("drag-over");
     });
 
     col.addEventListener("drop", e => {
       e.preventDefault();
       col.classList.remove("drag-over");
-      const taskId = e.dataTransfer.getData("text/plain") || draggedTaskId;
       const targetStatus = col.dataset.status;
-
-      if (taskId && targetStatus) {
-        const task = appState.getTaskById(taskId);
+      if (draggedTaskId && targetStatus) {
+        const task = appState.getTaskById(draggedTaskId);
         if (task && task.status !== targetStatus) {
-          appState.updateTaskStatus(taskId, targetStatus);
+          appState.updateTaskStatus(draggedTaskId, targetStatus);
           renderAll();
-          showToast(`Moved ${task.id} to ${targetStatus.toUpperCase()}`, "success");
+          showToast(`Moved ${draggedTaskId} to ${targetStatus}`, "info");
         }
       }
     });
   });
-}
-
-// ============================================================================
-// Dialogs: Task CRUD & Result Editing
-// ============================================================================
-
-function openTaskModal(taskId = null, defaultStatus = "backlog") {
-  dom.taskForm.reset();
-
-  if (taskId) {
-    const task = appState.getTaskById(taskId);
-    if (!task) return;
-    dom.modalTaskTitle.textContent = `Edit Task ${task.id}`;
-    dom.taskFormId.value = task.id;
-    dom.inputTaskTitle.value = task.title;
-    dom.selectTaskStatus.value = task.status;
-    dom.selectTaskPriority.value = task.priority;
-    dom.inputTaskWorker.value = task.worker || "";
-    dom.inputTaskTags.value = (task.tags || []).join(", ");
-    dom.inputTaskDesc.value = task.description || "";
-    dom.inputTaskPayload.value = JSON.stringify(task.payload || {}, null, 2);
-  } else {
-    dom.modalTaskTitle.textContent = "Create New Task";
-    dom.taskFormId.value = "";
-    dom.selectTaskStatus.value = defaultStatus;
-    dom.selectTaskPriority.value = "medium";
-    dom.inputTaskWorker.value = "worker-node-us-east-1";
-    dom.inputTaskPayload.value = '{\n  "batchSize": 500,\n  "timeout": 30\n}';
-  }
-
-  dom.taskModal.showModal();
-}
-
-function handleTaskFormSubmit(e) {
-  e.preventDefault();
-  const id = dom.taskFormId.value;
-  const title = dom.inputTaskTitle.value.trim();
-  if (!title) return;
-
-  const status = dom.selectTaskStatus.value;
-  const priority = dom.selectTaskPriority.value;
-  const worker = dom.inputTaskWorker.value.trim() || "worker-node-us-east-1";
-  const desc = dom.inputTaskDesc.value.trim();
-  const rawTags = dom.inputTaskTags.value.split(",").map(t => t.trim()).filter(Boolean);
-
-  let payload = {};
-  try {
-    if (dom.inputTaskPayload.value.trim()) {
-      payload = JSON.parse(dom.inputTaskPayload.value.trim());
-    }
-  } catch (err) {
-    alert("Invalid JSON format in Task Payload. Please fix before saving.");
-    return;
-  }
-
-  if (id) {
-    appState.updateTask(id, {
-      title,
-      status,
-      priority,
-      worker,
-      tags: rawTags,
-      description: desc,
-      payload
-    });
-    showToast(`Updated ${id}`, "success");
-    if (appState.activeTaskId === id) {
-      openResultsDrawer(id);
-    }
-  } else {
-    const created = appState.addTask({
-      title,
-      status,
-      priority,
-      worker,
-      tags: rawTags,
-      description: desc,
-      payload
-    });
-    showToast(`Created task ${created.id}`, "success");
-  }
-
-  dom.taskModal.close();
-  renderAll();
-}
-
-// Result Modal Handlers
-function openResultModal(taskId) {
-  const task = appState.getTaskById(taskId);
-  if (!task) return;
-
-  dom.resultForm.reset();
-  dom.resultFormTaskId.value = taskId;
-
-  if (task.result) {
-    dom.selectResultStatus.value = task.result.status || "success";
-    dom.inputResultDuration.value = task.result.duration || "1.82s";
-    dom.inputResultSummary.value = task.result.summary || "";
-    dom.inputResultExitCode.value = task.result.exitCode ?? 0;
-    dom.inputResultJson.value = JSON.stringify(task.result.data || {}, null, 2);
-    dom.inputResultLogs.value = (task.result.logs || []).join("\n");
-  } else {
-    dom.selectResultStatus.value = "success";
-    dom.inputResultDuration.value = "1.50s";
-    dom.inputResultSummary.value = "Task executed cleanly with 0 errors";
-    dom.inputResultExitCode.value = "0";
-    dom.inputResultJson.value = '{\n  "status": "ok",\n  "processed": 100\n}';
-    dom.inputResultLogs.value = `[${new Date().toLocaleTimeString()}] [INFO] Manual result attached\n[${new Date().toLocaleTimeString()}] [SUCCESS] Task executed cleanly`;
-  }
-
-  dom.resultModal.showModal();
-}
-
-function handleResultFormSubmit(e) {
-  e.preventDefault();
-  const taskId = dom.resultFormTaskId.value;
-  const task = appState.getTaskById(taskId);
-  if (!task) return;
-
-  let parsedData = {};
-  try {
-    if (dom.inputResultJson.value.trim()) {
-      parsedData = JSON.parse(dom.inputResultJson.value.trim());
-    }
-  } catch (err) {
-    alert("Invalid JSON format in Result Data Payload.");
-    return;
-  }
-
-  const logs = dom.inputResultLogs.value
-    .split("\n")
-    .map(l => l.trim())
-    .filter(Boolean);
-
-  const newResult = {
-    status: dom.selectResultStatus.value,
-    duration: dom.inputResultDuration.value.trim() || "1.0s",
-    summary: dom.inputResultSummary.value.trim() || "Completed",
-    exitCode: parseInt(dom.inputResultExitCode.value, 10) || 0,
-    recordsCount: parsedData.processed || parsedData.items || 1,
-    memoryUsage: "Normal",
-    executedAt: new Date().toLocaleTimeString(),
-    data: parsedData,
-    logs: logs,
-    links: task.result ? task.result.links || [] : []
-  };
-
-  appState.attachResult(taskId, newResult);
-
-  // Sync status if completed
-  if (newResult.status === "success" && task.status !== "done") {
-    task.status = "done";
-  } else if (newResult.status === "failure" && task.status !== "failed") {
-    task.status = "failed";
-  }
-  appState.saveTasks();
-
-  dom.resultModal.close();
-  renderAll();
-  openResultsDrawer(taskId);
-  showToast(`Results linked to ${taskId}`, "success");
-}
-
-// Add External Link Modal
-function openLinkModal() {
-  dom.linkForm.reset();
-  dom.linkModal.showModal();
-}
-
-function handleLinkFormSubmit(e) {
-  e.preventDefault();
-  if (!appState.activeTaskId) return;
-  const task = appState.getTaskById(appState.activeTaskId);
-  if (!task) return;
-
-  const label = dom.inputLinkLabel.value.trim();
-  const url = dom.inputLinkUrl.value.trim();
-
-  if (!task.result) {
-    task.result = {
-      status: "partial",
-      duration: "—",
-      summary: "External resource linked",
-      logs: [],
-      data: {},
-      links: []
-    };
-  }
-
-  if (!task.result.links) {
-    task.result.links = [];
-  }
-
-  task.result.links.push({ label, url });
-  appState.saveTasks();
-  dom.linkModal.close();
-  renderResourceLinks(task.result.links);
-  showToast("Resource link attached", "success");
-}
-
-// ============================================================================
-// Utilities & Toast System
-// ============================================================================
-function escapeHtml(str) {
-  if (typeof str !== "string") return String(str ?? "");
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
-
-function showToast(message, type = "info") {
-  const toast = document.createElement("div");
-  toast.className = `toast toast-${type}`;
-  toast.textContent = message;
-
-  dom.toastContainer.appendChild(toast);
-  setTimeout(() => {
-    toast.style.transition = "opacity 0.3s ease, transform 0.3s ease";
-    toast.style.opacity = "0";
-    toast.style.transform = "translateY(10px)";
-    setTimeout(() => toast.remove(), 300);
-  }, 2800);
 }
 
 // ============================================================================
@@ -1283,6 +2049,13 @@ function setupEventListeners() {
     renderAll();
   });
 
+  if (dom.filterDoor) {
+    dom.filterDoor.addEventListener("change", e => {
+      appState.filters.door = e.target.value;
+      renderAll();
+    });
+  }
+
   dom.filterWorker.addEventListener("change", e => {
     appState.filters.worker = e.target.value;
     renderAll();
@@ -1294,36 +2067,86 @@ function setupEventListeners() {
   });
 
   // View Switchers
+  const resetViewButtons = () => {
+    [dom.viewKanbanBtn, dom.viewApprovalsBtn, dom.viewDirectivesBtn, dom.viewAgentsBtn, dom.viewTableBtn]
+      .filter(Boolean)
+      .forEach(btn => btn.classList.remove("active"));
+  };
+
   dom.viewKanbanBtn.addEventListener("click", () => {
     appState.currentView = "kanban";
+    resetViewButtons();
     dom.viewKanbanBtn.classList.add("active");
-    dom.viewTableBtn.classList.remove("active");
-    dom.kanbanBoard.classList.remove("hidden");
-    dom.tableViewContainer.classList.add("hidden");
     renderAll();
   });
 
   dom.viewTableBtn.addEventListener("click", () => {
     appState.currentView = "table";
+    resetViewButtons();
     dom.viewTableBtn.classList.add("active");
-    dom.viewKanbanBtn.classList.remove("active");
-    dom.kanbanBoard.classList.add("hidden");
-    dom.tableViewContainer.classList.remove("hidden");
     renderAll();
   });
 
+  if (dom.viewApprovalsBtn) {
+    dom.viewApprovalsBtn.addEventListener("click", () => {
+      appState.currentView = "approvals";
+      resetViewButtons();
+      dom.viewApprovalsBtn.classList.add("active");
+      renderAll();
+    });
+  }
+
+  if (dom.viewDirectivesBtn) {
+    dom.viewDirectivesBtn.addEventListener("click", () => {
+      appState.currentView = "directives";
+      resetViewButtons();
+      dom.viewDirectivesBtn.classList.add("active");
+      renderAll();
+    });
+  }
+
+  if (dom.viewAgentsBtn) {
+    dom.viewAgentsBtn.addEventListener("click", () => {
+      appState.currentView = "agents";
+      resetViewButtons();
+      dom.viewAgentsBtn.classList.add("active");
+      renderAll();
+    });
+  }
+
   // Header Actions
   dom.btnNewTask.addEventListener("click", () => openTaskModal(null, "backlog"));
+  if (dom.btnNewDirective) {
+    dom.btnNewDirective.addEventListener("click", openDirectiveModal);
+  }
+  if (dom.btnOpenDirectiveFormModal) {
+    dom.btnOpenDirectiveFormModal.addEventListener("click", openDirectiveModal);
+  }
+
   dom.btnSimulateAll.addEventListener("click", simulateRunAllQueued);
-  dom.btnResetDemo.addEventListener("click", () => {
-    if (confirm("Reset dashboard data to original demo state?")) {
-      appState.resetToDefault();
-      renderAll();
-      showToast("Reset to demo dataset", "success");
+
+  // Kill Switch
+  dom.btnKillSwitch.addEventListener("click", () => {
+    const isFrozen = appState.toggleKillSwitch();
+    if (isFrozen) {
+      dom.btnKillSwitch.classList.add("active");
+      dom.killSwitchText.textContent = "SYSTEM FROZEN";
+      showToast("🚨 EMERGENCY KILL SWITCH ENGAGED: All agent processes halted.", "danger");
+    } else {
+      dom.btnKillSwitch.classList.remove("active");
+      dom.killSwitchText.textContent = "Kill Switch";
+      showToast("🟢 Kill Switch Disengaged: Normal agent orchestration resumed.", "success");
     }
   });
 
-  // Add task button from column headers
+  // Reset Demo (uses showToast instead of browser confirm)
+  dom.btnResetDemo.addEventListener("click", () => {
+    appState.resetToDefault();
+    renderAll();
+    showToast("Dashboard reset to corporate demo baseline", "success");
+  });
+
+  // Column Quick Add Buttons
   document.querySelectorAll(".btn-add-column-task").forEach(btn => {
     btn.addEventListener("click", () => {
       const status = btn.dataset.addStatus || "backlog";
@@ -1361,13 +2184,11 @@ function setupEventListeners() {
 
   dom.btnDeleteTask.addEventListener("click", () => {
     if (!appState.activeTaskId) return;
-    if (confirm(`Are you sure you want to delete task ${appState.activeTaskId}?`)) {
-      const id = appState.activeTaskId;
-      closeResultsDrawer();
-      appState.deleteTask(id);
-      renderAll();
-      showToast(`Deleted ${id}`, "danger");
-    }
+    const id = appState.activeTaskId;
+    closeResultsDrawer();
+    appState.deleteTask(id);
+    renderAll();
+    showToast(`Deleted task ${id}`, "danger");
   });
 
   dom.btnCopyResultJson.addEventListener("click", () => {
@@ -1398,10 +2219,45 @@ function setupEventListeners() {
 
   dom.btnAddExternalLink.addEventListener("click", openLinkModal);
 
-  // Dialog Form Submissions & Cancels
+  // Form Submissions
   dom.taskForm.addEventListener("submit", handleTaskFormSubmit);
   dom.btnCloseTaskModal.addEventListener("click", () => dom.taskModal.close());
   dom.btnCancelTaskModal.addEventListener("click", () => dom.taskModal.close());
+
+  dom.directiveForm.addEventListener("submit", handleDirectiveFormSubmit);
+  dom.btnCloseDirectiveModal.addEventListener("click", () => dom.directiveModal.close());
+  dom.btnCancelDirectiveModal.addEventListener("click", () => dom.directiveModal.close());
+
+  // One-Way Door Approval Decisions
+  dom.btnApproveAction.addEventListener("click", () => {
+    if (!currentApprovalTaskId) return;
+    const notes = dom.inputApprovalNotes.value.trim();
+    appState.approveOneWayTask(currentApprovalTaskId, notes);
+    dom.approvalModal.close();
+    renderAll();
+    showToast(`✅ One-Way Action Approved for ${currentApprovalTaskId}!`, "success");
+  });
+
+  dom.btnReviseApproval.addEventListener("click", () => {
+    if (!currentApprovalTaskId) return;
+    const feedback = dom.inputApprovalNotes.value.trim() || "Please revise acceptance tests";
+    appState.reviseOneWayTask(currentApprovalTaskId, feedback);
+    dom.approvalModal.close();
+    renderAll();
+    showToast(`Returned ${currentApprovalTaskId} for revision`, "warning");
+  });
+
+  dom.btnRejectApproval.addEventListener("click", () => {
+    if (!currentApprovalTaskId) return;
+    const reason = dom.inputApprovalNotes.value.trim() || "Rejected by Chairman";
+    appState.rejectOneWayTask(currentApprovalTaskId, reason);
+    dom.approvalModal.close();
+    renderAll();
+    showToast(`❌ One-Way Door Rejected for ${currentApprovalTaskId}`, "danger");
+  });
+
+  dom.btnCloseApprovalModal.addEventListener("click", () => dom.approvalModal.close());
+  dom.btnCancelApprovalModal.addEventListener("click", () => dom.approvalModal.close());
 
   dom.resultForm.addEventListener("submit", handleResultFormSubmit);
   dom.btnCloseResultModal.addEventListener("click", () => dom.resultModal.close());

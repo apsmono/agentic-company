@@ -43,35 +43,47 @@ Each task card displays an embedded **Linked Results Hook** showing execution st
 
 ---
 
-## 📁 Project Architecture & File Structure
+## 📁 Project Architecture & Documentation
 
 ```
-worker-base/
-├── index.html        # Semantic HTML5 layout, accessible <dialog> modals, Kanban columns, drawer
-├── styles.css        # Cyber-refined dark design system, glassmorphism, responsive grid & animations
-├── app.js            # Vanilla JS TaskManager, drag-and-drop controller, worker simulator & inspector
-└── README.md         # Architecture overview and documentation
+agentic-company/
+├── docs/
+│   ├── AGENTIC_COMPANY_BUILD_PLAN.md              # Original Master Build Plan by @Arif Eko Pramono
+│   ├── PLAN_CRITIQUE.md                           # Architectural critique, risks, and recommendations
+│   ├── INCREMENTAL_ROADMAP.md                     # Granular, versioned rollout starting from dashboard
+│   └── ORGANIZATIONAL_STRUCTURE_AND_GOVERNANCE.md # Corporate governance framework & authority matrix
+├── index.html                                     # Dashboard UI shell, dialogs, Kanban columns, drawer
+├── styles.css                                     # Cyber-refined design system, glassmorphism, responsive grid
+├── app.js                                         # TaskManager, drag-and-drop controller, worker simulator
+└── README.md                                      # Project overview and documentation
 ```
+
+### Strategic Governance & Architecture Documents
+
+- [AGENTIC_COMPANY_BUILD_PLAN.md](file:///Users/mbp-m1-pro/Developer/Automation/agentic-company/docs/AGENTIC_COMPANY_BUILD_PLAN.md): Core vision, org structure (Chairman, CEO, CTO, Workers), governance rules, data model, and 7-step plan.
+- [PLAN_CRITIQUE.md](file:///Users/mbp-m1-pro/Developer/Automation/agentic-company/docs/PLAN_CRITIQUE.md): Deep architectural critique covering simulator retention, cold-start coding traps, and security mitigations.
+- [INCREMENTAL_ROADMAP.md](file:///Users/mbp-m1-pro/Developer/Automation/agentic-company/docs/INCREMENTAL_ROADMAP.md): Step-by-step roadmap broken down by semantic versions (`v1.3` $\rightarrow$ `v1.4` $\rightarrow$ `v2.0` $\rightarrow$ `v2.1` $\rightarrow$ `v2.2`).
+- [ORGANIZATIONAL_STRUCTURE_AND_GOVERNANCE.md](file:///Users/mbp-m1-pro/Developer/Automation/agentic-company/docs/ORGANIZATIONAL_STRUCTURE_AND_GOVERNANCE.md): Reference guide for corporate governance, board roles, RACI, DRI, and delegation of authority.
 
 ### Architectural Breakdown
 
-- [index.html](file:///Users/mbp-m1-pro/Developer/Automation/worker-base/index.html):
+- [index.html](file:///Users/mbp-m1-pro/Developer/Automation/agentic-company/index.html):
   - Structured semantic header containing real-time summary metric pills (`Total`, `Running`, `Success`, `Failed`, `Success Rate`).
   - Search and filter toolbar with view mode toggle.
   - 5-column Kanban board container and collapsible Matrix Table.
   - Native `<dialog>` elements for `Task Modal`, `Result Modal`, and `Link Resource Modal`.
   - Floating slide-out `<aside class="results-drawer">` with backdrop and accessible tab controls.
 
-- [styles.css](file:///Users/mbp-m1-pro/Developer/Automation/worker-base/styles.css):
+- [styles.css](file:///Users/mbp-m1-pro/Developer/Automation/agentic-company/styles.css):
   - Built with CSS Custom Properties for colors, shadows, border glows, and typography.
   - Dark mode aesthetic utilizing curated Indigo/Cyan accents and glassmorphism (`backdrop-filter: blur(16px)`).
   - Responsive layout adapting to various desktop and widescreen displays.
   - Terminal viewer styling mimicking a native developer console.
 
-- [app.js](file:///Users/mbp-m1-pro/Developer/Automation/worker-base/app.js):
+- [app.js](file:///Users/mbp-m1-pro/Developer/Automation/agentic-company/app.js):
   - `TaskManager`: Central state management class managing in-memory tasks, filtering algorithms, metric calculations, and `localStorage` synchronization.
   - Drag-and-drop controller handling HTML5 `dragstart`, `dragover`, and `drop`.
-  - Realistic initial demo dataset simulating web scrapers, LLM embedding jobs, financial reconciliations, and database vacuum maintenance.
+  - Initial demo dataset simulating scrapers, LLM tasks, and maintenance jobs.
   - Asynchronous worker simulation engine with multi-stage timeout sequences and log updates.
 
 ---
@@ -79,7 +91,7 @@ worker-base/
 ## 🚀 Getting Started
 
 ### Option 1: Open Directly in Browser
-Simply open [index.html](file:///Users/mbp-m1-pro/Developer/Automation/worker-base/index.html) in any modern web browser (Chrome, Edge, Safari, Firefox):
+Simply open [index.html](file:///Users/mbp-m1-pro/Developer/Automation/agentic-company/index.html) in any modern web browser:
 ```bash
 open index.html
 ```
@@ -87,7 +99,8 @@ open index.html
 ### Option 2: Run with a Local Static Server
 You can serve the directory using Python's built-in HTTP server:
 ```bash
-# From /Users/mbp-m1-pro/Developer/Automation/worker-base
+# From /Users/mbp-m1-pro/Developer/Automation/agentic-company
 python3 -m http.server 4321
 ```
 Then navigate to [http://localhost:4321](http://localhost:4321).
+

@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="WorkerFlow - Modern Kanban Task Dashboard with Linked Execution Results, Real-Time Worker Logs, and Artifact Inspector.">
+  <title>WorkerFlow • Task & Execution Results Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- App Shell -->
+  <div class="app-layout">
+    <!-- Top Navigation / Header -->
+    <header class="app-header">
+      <div class="header-brand">
+        <div class="logo-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+            <line x1="8" y1="21" x2="16" y2="21"></line>
+            <line x1="12" y1="17" x2="12" y2="21"></line>
+          </svg>
+        </div>
+        <div>
+          <h1 class="brand-title">WorkerFlow <span class="badge badge-accent">v1.2</span></h1>
+          <p class="brand-subtitle">Automated Task Orchestration &amp; Results Hub</p>
+        </div>
+      </div>
+
+      <!-- Quick Metrics Summary Bar -->
+      <div class="header-metrics" id="headerMetrics">
+        <div class="metric-pill">
+          <span class="metric-label">Total</span>
+          <span class="metric-val" id="metricTotal">0</span>
+        </div>
+        <div class="metric-pill">
+          <span class="metric-label">Running</span>
+          <span class="metric-val text-warning" id="metricRunning">0</span>
+        </div>
+        <div class="metric-pill">
+          <span class="metric-label">Success</span>
+          <span class="metric-val text-success" id="metricSuccess">0</span>
+        </div>
+        <div class="metric-pill">
+          <span class="metric-label">Failed</span>
+          <span class="metric-val text-danger" id="metricFailed">0</span>
+        </div>
+        <div class="metric-pill">
+          <span class="metric-label">Success Rate</span>
+          <span class="metric-val text-accent" id="metricRate">0%</span>
+        </div>
+      </div>
+
+      <!-- Header Controls -->
+      <div class="header-actions">
+        <button type="button" id="btnNewTask" class="btn btn-primary" title="Create New Task">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          <span>New Task</span>
+        </button>
+        <button type="button" id="btnSimulateAll" class="btn btn-secondary" title="Execute queued tasks on simulated workers">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+          </svg>
+          <span>Run Worker Queue</span>
+        </button>
+        <button type="button" id="btnResetDemo" class="btn btn-ghost" title="Reset sample data">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+            <path d="M3 3v5h5"></path>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Toolbar: Search, Filters & View Switcher -->
+    <section class="dashboard-toolbar" aria-label="Filters and Search Controls">
+      <div class="search-box">
+        <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input type="text" id="searchInput" placeholder="Search tasks, IDs, tags, results, or worker nodes..." autocomplete="off">
+        <button type="button" id="clearSearch" class="btn-clear hidden" aria-label="Clear search">&times;</button>
+      </div>
+
+      <div class="filter-group">
+        <label for="filterPriority" class="sr-only">Filter by priority</label>
+        <select id="filterPriority" class="filter-select">
+          <option value="all">All Priorities</option>
+          <option value="urgent">Urgent</option>
+          <option value="high">High</option>
+          <option value="medium">Medium</option>
+          <option value="low">Low</option>
+        </select>
+
+        <label for="filterWorker" class="sr-only">Filter by worker</label>
+        <select id="filterWorker" class="filter-select">
+          <option value="all">All Worker Nodes</option>
+        </select>
+
+        <label for="filterResult" class="sr-only">Filter by result status</label>
+        <select id="filterResult" class="filter-select">
+          <option value="all">All Result Statuses</option>
+          <option value="with-results">Has Linked Results</option>
+          <option value="success-results">Success Result</option>
+          <option value="failure-results">Failed Result</option>
+          <option value="no-results">No Results Yet</option>
+        </select>
+      </div>
+
+      <div class="view-toggles" role="group" aria-label="View switch">
+        <button type="button" id="viewKanbanBtn" class="toggle-btn active" title="Kanban Board View">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="5" height="18" rx="1"></rect>
+            <rect x="10" y="3" width="5" height="12" rx="1"></rect>
+            <rect x="17" y="3" width="5" height="15" rx="1"></rect>
+          </svg>
+          <span>Kanban</span>
+        </button>
+        <button type="button" id="viewTableBtn" class="toggle-btn" title="Detailed Results Matrix View">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+          <span>Matrix Table</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Main Workspace Area -->
+    <main class="dashboard-content" id="mainContent">
+      <!-- Kanban Board Container -->
+      <div class="kanban-board" id="kanbanBoard">
+        <!-- Column 1: Backlog / Queued -->
+        <div class="kanban-column" data-status="backlog" id="col-backlog">
+          <div class="column-header">
+            <div class="col-title-wrap">
+              <span class="status-indicator status-backlog"></span>
+              <h2 class="column-title">Queued / Backlog</h2>
+              <span class="column-counter" id="count-backlog">0</span>
+            </div>
+            <button type="button" class="btn-add-column-task" data-add-status="backlog" title="Add task to Backlog">+</button>
+          </div>
+          <div class="column-cards" data-drop-status="backlog" id="cards-backlog"></div>
+        </div>
+
+        <!-- Column 2: In Progress / Running -->
+        <div class="kanban-column" data-status="running" id="col-running">
+          <div class="column-header">
+            <div class="col-title-wrap">
+              <span class="status-indicator status-running"></span>
+              <h2 class="column-title">In Progress / Running</h2>
+              <span class="column-counter" id="count-running">0</span>
+            </div>
+            <button type="button" class="btn-add-column-task" data-add-status="running" title="Add task to Running">+</button>
+          </div>
+          <div class="column-cards" data-drop-status="running" id="cards-running"></div>
+        </div>
+
+        <!-- Column 3: Review / Verifying -->
+        <div class="kanban-column" data-status="review" id="col-review">
+          <div class="column-header">
+            <div class="col-title-wrap">
+              <span class="status-indicator status-review"></span>
+              <h2 class="column-title">Verifying Results</h2>
+              <span class="column-counter" id="count-review">0</span>
+            </div>
+            <button type="button" class="btn-add-column-task" data-add-status="review" title="Add task to Verifying">+</button>
+          </div>
+          <div class="column-cards" data-drop-status="review" id="cards-review"></div>
+        </div>
+
+        <!-- Column 4: Completed / Done -->
+        <div class="kanban-column" data-status="done" id="col-done">
+          <div class="column-header">
+            <div class="col-title-wrap">
+              <span class="status-indicator status-done"></span>
+              <h2 class="column-title">Completed</h2>
+              <span class="column-counter" id="count-done">0</span>
+            </div>
+            <button type="button" class="btn-add-column-task" data-add-status="done" title="Add task to Completed">+</button>
+          </div>
+          <div class="column-cards" data-drop-status="done" id="cards-done"></div>
+        </div>
+
+        <!-- Column 5: Failed -->
+        <div class="kanban-column" data-status="failed" id="col-failed">
+          <div class="column-header">
+            <div class="col-title-wrap">
+              <span class="status-indicator status-failed"></span>
+              <h2 class="column-title">Failed / Errors</h2>
+              <span class="column-counter" id="count-failed">0</span>
+            </div>
+            <button type="button" class="btn-add-column-task" data-add-status="failed" title="Add task to Failed">+</button>
+          </div>
+          <div class="column-cards" data-drop-status="failed" id="cards-failed"></div>
+        </div>
+      </div>
+
+      <!-- Table / Results Matrix View (Toggled) -->
+      <div class="table-view-container hidden" id="tableViewContainer">
+        <div class="table-card">
+          <div class="table-wrapper">
+            <table class="results-table" id="resultsMatrixTable">
+              <thead>
+                <tr>
+                  <th>Task Key</th>
+                  <th>Title &amp; Worker</th>
+                  <th>Status</th>
+                  <th>Priority</th>
+                  <th>Result Status</th>
+                  <th>Duration</th>
+                  <th>Output Summary</th>
+                  <th>Last Run</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="matrixTableBody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- RESULTS INSPECTOR DRAWER / MODAL -->
+  <aside class="results-drawer" id="resultsDrawer" aria-hidden="true">
+    <div class="drawer-backdrop" id="drawerBackdrop"></div>
+    <div class="drawer-panel">
+      <!-- Drawer Header -->
+      <div class="drawer-header">
+        <div class="drawer-title-box">
+          <div class="drawer-badge-row">
+            <span class="task-id-tag" id="drawerTaskId">TASK-000</span>
+            <span class="status-pill" id="drawerStatusPill">Status</span>
+            <span class="result-badge" id="drawerResultBadge">No Result</span>
+          </div>
+          <h2 class="drawer-title" id="drawerTaskTitle">Task Title</h2>
+          <p class="drawer-desc" id="drawerTaskDesc">Description</p>
+        </div>
+        <button type="button" class="btn-close-drawer" id="btnCloseDrawer" aria-label="Close details">&times;</button>
+      </div>
+
+      <!-- Quick Action Toolbar in Drawer -->
+      <div class="drawer-toolbar">
+        <button type="button" id="btnSimulateTask" class="btn btn-sm btn-accent">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+          </svg>
+          <span>Run Worker Now</span>
+        </button>
+        <button type="button" id="btnEditTaskFromDrawer" class="btn btn-sm btn-secondary">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 20h9"></path>
+            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+          </svg>
+          <span>Edit Task</span>
+        </button>
+        <button type="button" id="btnAddResultManual" class="btn btn-sm btn-secondary">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          <span>Attach/Edit Result</span>
+        </button>
+        <div class="drawer-spacer"></div>
+        <button type="button" id="btnDeleteTask" class="btn btn-sm btn-danger-ghost">Delete Task</button>
+      </div>
+
+      <!-- Execution Overview Metric Cards -->
+      <div class="results-stats-grid" id="drawerStatsGrid">
+        <div class="stat-box">
+          <span class="stat-box-label">Execution Duration</span>
+          <span class="stat-box-val" id="statDuration">—</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-box-label">Worker Node</span>
+          <span class="stat-box-val" id="statWorker">—</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-box-label">Records / Output</span>
+          <span class="stat-box-val" id="statRecords">—</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-box-label">Memory &amp; Exit Code</span>
+          <span class="stat-box-val" id="statExitCode">—</span>
+        </div>
+      </div>
+
+      <!-- Drawer Tabs -->
+      <div class="drawer-tabs" role="tablist">
+        <button type="button" class="tab-btn active" data-tab="tab-artifacts">Output &amp; Data Artifacts</button>
+        <button type="button" class="tab-btn" data-tab="tab-logs">Execution Logs (<span id="logCount">0</span>)</button>
+        <button type="button" class="tab-btn" data-tab="tab-payload">Task Parameters &amp; Config</button>
+        <button type="button" class="tab-btn" data-tab="tab-links">Linked URLs &amp; Resources</button>
+      </div>
+
+      <!-- Tab Content: Artifacts & Output -->
+      <div class="tab-content active" id="tab-artifacts">
+        <div class="artifact-section-header">
+          <div>
+            <h3 class="section-heading">Structured Output Data</h3>
+            <p class="section-subheading">Results delivered by worker execution pipeline.</p>
+          </div>
+          <div class="artifact-actions">
+            <button type="button" id="btnCopyResultJson" class="btn btn-sm btn-ghost">Copy JSON</button>
+            <button type="button" id="btnDownloadResult" class="btn btn-sm btn-ghost">Download</button>
+          </div>
+        </div>
+        <div class="code-preview-wrap">
+          <pre><code id="artifactJsonContent" class="json-output">// No result generated yet. Run the worker or attach results.</code></pre>
+        </div>
+      </div>
+
+      <!-- Tab Content: Logs -->
+      <div class="tab-content" id="tab-logs">
+        <div class="logs-toolbar">
+          <div class="log-indicator-live">
+            <span class="live-dot"></span>
+            <span>Console Stream</span>
+          </div>
+          <button type="button" id="btnCopyLogs" class="btn btn-sm btn-ghost">Copy All Logs</button>
+        </div>
+        <div class="terminal-container" id="terminalLogs">
+          <div class="terminal-line"><span class="log-dim">[system]</span> Ready to capture task logs...</div>
+        </div>
+      </div>
+
+      <!-- Tab Content: Task Parameters / Config -->
+      <div class="tab-content" id="tab-payload">
+        <h3 class="section-heading">Task Input Parameters</h3>
+        <p class="section-subheading">Configuration payload passed into the execution runner.</p>
+        <div class="code-preview-wrap">
+          <pre><code id="taskPayloadContent" class="json-output">{}</code></pre>
+        </div>
+      </div>
+
+      <!-- Tab Content: Linked Resources / External URLs -->
+      <div class="tab-content" id="tab-links">
+        <div class="artifact-section-header">
+          <h3 class="section-heading">Attached Artifacts &amp; External Links</h3>
+          <button type="button" id="btnAddExternalLink" class="btn btn-sm btn-secondary">+ Add Link</button>
+        </div>
+        <ul class="resources-list" id="resourcesList">
+          <li class="empty-list-msg">No external resources linked to this task yet.</li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MODAL: Create / Edit Task -->
+  <dialog class="app-dialog" id="taskModal">
+    <div class="dialog-content">
+      <div class="dialog-header">
+        <h2 id="modalTaskTitle">Create New Task</h2>
+        <button type="button" class="btn-close-dialog" id="btnCloseTaskModal">&times;</button>
+      </div>
+      <form id="taskForm" method="dialog">
+        <input type="hidden" id="taskFormId" value="">
+
+        <div class="form-group">
+          <label for="inputTaskTitle" class="form-label">Task Title <span class="required">*</span></label>
+          <input type="text" id="inputTaskTitle" class="form-control" required placeholder="e.g. Ingest Customer Data Batch #410">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group col-half">
+            <label for="selectTaskStatus" class="form-label">Initial Status</label>
+            <select id="selectTaskStatus" class="form-control">
+              <option value="backlog">Queued / Backlog</option>
+              <option value="running">In Progress / Running</option>
+              <option value="review">Verifying Results</option>
+              <option value="done">Completed</option>
+              <option value="failed">Failed / Error</option>
+            </select>
+          </div>
+
+          <div class="form-group col-half">
+            <label for="selectTaskPriority" class="form-label">Priority</label>
+            <select id="selectTaskPriority" class="form-control">
+              <option value="medium">Medium</option>
+              <option value="low">Low</option>
+              <option value="high">High</option>
+              <option value="urgent">Urgent</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group col-half">
+            <label for="inputTaskWorker" class="form-label">Assigned Worker Node</label>
+            <input type="text" id="inputTaskWorker" class="form-control" placeholder="e.g. worker-node-us-east-1" list="workerSuggestions">
+            <datalist id="workerSuggestions">
+              <option value="worker-node-us-east-1"></option>
+              <option value="worker-gpu-cluster-02"></option>
+              <option value="crawler-engine-eu-west"></option>
+              <option value="analytics-processor-04"></option>
+              <option value="edge-notifier-service"></option>
+            </datalist>
+          </div>
+
+          <div class="form-group col-half">
+            <label for="inputTaskTags" class="form-label">Tags (comma separated)</label>
+            <input type="text" id="inputTaskTags" class="form-control" placeholder="scraping, etl, finance, report">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="inputTaskDesc" class="form-label">Description / Goal</label>
+          <textarea id="inputTaskDesc" rows="3" class="form-control" placeholder="Detail the purpose and expected outputs of this task..."></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="inputTaskPayload" class="form-label">Task Input Payload (JSON)</label>
+          <textarea id="inputTaskPayload" rows="4" class="form-control font-mono" placeholder='{ "batchSize": 500, "retryLimit": 3 }'></textarea>
+        </div>
+
+        <div class="dialog-actions">
+          <button type="button" class="btn btn-secondary" id="btnCancelTaskModal">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="btnSaveTask">Save Task</button>
+        </div>
+      </form>
+    </div>
+  </dialog>
+
+  <!-- MODAL: Attach / Edit Result -->
+  <dialog class="app-dialog" id="resultModal">
+    <div class="dialog-content">
+      <div class="dialog-header">
+        <h2>Attach / Edit Result</h2>
+        <button type="button" class="btn-close-dialog" id="btnCloseResultModal">&times;</button>
+      </div>
+      <form id="resultForm" method="dialog">
+        <input type="hidden" id="resultFormTaskId" value="">
+
+        <div class="form-row">
+          <div class="form-group col-half">
+            <label for="selectResultStatus" class="form-label">Execution Result Status</label>
+            <select id="selectResultStatus" class="form-control">
+              <option value="success">Success (Exit 0)</option>
+              <option value="failure">Failure / Error</option>
+              <option value="partial">Partial Success / Warnings</option>
+            </select>
+          </div>
+          <div class="form-group col-half">
+            <label for="inputResultDuration" class="form-label">Execution Duration</label>
+            <input type="text" id="inputResultDuration" class="form-control" placeholder="e.g. 2.45s or 120ms" value="1.82s">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group col-half">
+            <label for="inputResultSummary" class="form-label">Short Summary</label>
+            <input type="text" id="inputResultSummary" class="form-control" placeholder="e.g. Processed 1,420 items cleanly">
+          </div>
+          <div class="form-group col-half">
+            <label for="inputResultExitCode" class="form-label">Exit Code / Status Code</label>
+            <input type="text" id="inputResultExitCode" class="form-control" placeholder="0 or 200" value="0">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="inputResultJson" class="form-label">Result Data Payload (JSON)</label>
+          <textarea id="inputResultJson" rows="6" class="form-control font-mono" placeholder='{ "itemsProcessed": 1420, "errors": 0, "status": "completed" }'></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="inputResultLogs" class="form-label">Log Output (one log line per line)</label>
+          <textarea id="inputResultLogs" rows="4" class="form-control font-mono" placeholder="[INFO] Worker booted&#10;[INFO] Processing chunk...&#10;[SUCCESS] Finished in 1.82s"></textarea>
+        </div>
+
+        <div class="dialog-actions">
+          <button type="button" class="btn btn-secondary" id="btnCancelResultModal">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="btnSaveResult">Save Results</button>
+        </div>
+      </form>
+    </div>
+  </dialog>
+
+  <!-- MODAL: Add External Resource Link -->
+  <dialog class="app-dialog" id="linkModal">
+    <div class="dialog-content modal-sm">
+      <div class="dialog-header">
+        <h2>Link Resource URL</h2>
+        <button type="button" class="btn-close-dialog" id="btnCloseLinkModal">&times;</button>
+      </div>
+      <form id="linkForm" method="dialog">
+        <div class="form-group">
+          <label for="inputLinkLabel" class="form-label">Label</label>
+          <input type="text" id="inputLinkLabel" class="form-control" required placeholder="e.g. S3 Parquet Output or CloudWatch Log">
+        </div>
+        <div class="form-group">
+          <label for="inputLinkUrl" class="form-label">Target URL / URI</label>
+          <input type="url" id="inputLinkUrl" class="form-control" required placeholder="https://example.com/reports/batch-102.json">
+        </div>
+        <div class="dialog-actions">
+          <button type="button" class="btn btn-secondary" id="btnCancelLinkModal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Add Link</button>
+        </div>
+      </form>
+    </div>
+  </dialog>
+
+  <!-- Notification Toast Container -->
+  <div class="toast-container" id="toastContainer" aria-live="polite"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -30,7 +30,7 @@ graph TD
 ### 📦 Version 1.3.0: Agentic Company Cockpit
 **Goal**: Transform the current ETL dashboard into the executive command center for the autonomous company, complete with simulated multi-agent interactions.
 
-- [ ] **Step 1.1: Rebrand & Layout Modernization**
+- [x] **Step 1.1: Rebrand & Layout Modernization**
   - Update branding from *WorkerFlow* to **Agentic Company Cockpit** (`v1.3.0`).
   - Introduce an executive navigation bar with quick jumps:
     - `Directives & Boardroom`
@@ -40,7 +40,7 @@ graph TD
     - `Decisions & Audit Ledger`
   - Maintain the cyber-refined dark theme, glassmorphic cards, and responsive layout.
 
-- [ ] **Step 1.2: Chairman Directives Panel (Executive Inbox)**
+- [x] **Step 1.2: Chairman Directives Panel (Executive Inbox)**
   - Add a dedicated view for the Chairman to draft and dispatch strategic directives to the CEO.
   - Directive status pipeline: `Draft` $\rightarrow$ `CEO Planning` $\rightarrow$ `In Execution` $\rightarrow$ `Review Ready` $\rightarrow$ `Completed`.
   - Each directive card displays:
@@ -49,7 +49,7 @@ graph TD
     - Budget allocated vs. consumed.
     - Final CEO summary report preview.
 
-- [ ] **Step 1.3: One-Way Door / Approvals Desk**
+- [x] **Step 1.3: One-Way Door / Approvals Desk**
   - Add an explicit **Chairman Approval Column / Desk** on the board.
   - Tasks flagged with `door: 'one_way'` automatically pause before executing irreversible actions:
     - Code merge to production (`main`).
@@ -61,7 +61,7 @@ graph TD
     - Diff viewer or payload preview.
     - Explicit buttons: `Approve Action`, `Reject / Terminate`, `Request Revision`.
 
-- [ ] **Step 1.4: Agent Roster & Real-Time Hierarchy**
+- [x] **Step 1.4: Agent Roster & Real-Time Hierarchy**
   - Replace generic worker nodes (`node-scraper-01`) with defined company agents:
     - **CEO Agent**: Strategic planning, task decomposition, resource management.
     - **CTO Agent**: Architecture specification, task assignment, technical review.
@@ -69,7 +69,7 @@ graph TD
     - **Reviewer Agent**: Code critique, standards enforcement, quality audit.
   - Display agent cards showing current status (`Idle`, `Planning`, `Executing`, `Blocked`), active task lease, daily token burn, and avatar badges.
 
-- [ ] **Step 1.5: Financial Guardrails & Kill Switch Widget**
+- [x] **Step 1.5: Financial Guardrails & Kill Switch Widget**
   - Header widgets displaying:
     - **Today's Token Burn**: Real-time counter and percentage of daily limit.
     - **Estimated Cost**: Calculated in USD ($) based on token tiers.
@@ -77,7 +77,7 @@ graph TD
   - Prominent **Emergency Kill Switch** button:
     - Immediately freezes all active agent leases and prevents any new task transitions.
 
-- [ ] **Step 1.6: Enhanced Multi-Agent Simulation Engine**
+- [x] **Step 1.6: Enhanced Multi-Agent Simulation Engine**
   - Upgrade the simulation engine in [app.js](file:///Users/mbp-m1-pro/Developer/Automation/agentic-company/app.js) to demonstrate the real company lifecycle:
     1. Chairman enters a directive: *"Build automated customer refund pipeline"*.
     2. CEO Agent accepts directive and spawns 3 sub-tasks with acceptance criteria.

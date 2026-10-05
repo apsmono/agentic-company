@@ -1,9 +1,9 @@
 /**
- * Agentic Company Cockpit (v1.4.0)
+ * Agentic Company Cockpit (v2.2.0)
  * Corporate Governance, Chairman Directives, One-Way Door Approvals Desk,
  * Agent Roster, Financial Guardrails, HTML5 Drag-and-Drop, Multi-Agent Simulator,
  * Pluggable StorageAdapter Pattern (LocalStorage & Supabase Cloud),
- * Realtime WebSockets Sync, and Chairman Security PIN Gate.
+ * Realtime WebSockets Sync, Chairman Security PIN Gate, and Headless Daemon Integration.
  */
 
 // ============================================================================
@@ -90,14 +90,14 @@ const DEFAULT_DIRECTIVES = [
     id: "DIR-1",
     title: "Autonomous CI/CD & Worktree PR Review Pipeline",
     priority: "high",
-    status: "in_progress",
+    status: "completed",
     createdAt: "2026-10-01 08:30",
     budgetAllocated: "$5.00",
     tokensUsed: 52400,
     costUsd: 1.05,
     context: "Establish automated developer agent sandboxes using temporary Git worktrees. Ensure Reviewer agent validates all PR diffs before halting for Chairman One-Way Door merge approval.",
     childTaskIds: ["TASK-101", "TASK-102", "TASK-103"],
-    ceoReport: "CEO Note: Decomposed into 3 technical tasks with CTO. TASK-101 is complete, TASK-102 is currently coding, and TASK-103 has halted at the One-Way Door gate pending Chairman sign-off."
+    ceoReport: "CEO Delivery Note: All 3 sub-tasks (TASK-101, TASK-102, TASK-103) completed successfully. PR #14 merged into main following Chairman One-Way Door sign-off."
   },
   {
     id: "DIR-2",
@@ -109,8 +109,8 @@ const DEFAULT_DIRECTIVES = [
     tokensUsed: 38200,
     costUsd: 0.76,
     context: "Upgrade WorkerFlow into the Agentic Company Cockpit with Directives Inbox, One-Way Door Approvals Desk, and Financial Guardrails.",
-    childTaskIds: ["TASK-104", "TASK-105"],
-    ceoReport: "CEO Delivery Note: UI and governance contracts successfully upgraded. Directives, Approvals Desk, and Agent Roster are live."
+    childTaskIds: ["TASK-104", "TASK-105", "TASK-106"],
+    ceoReport: "CEO Delivery Note: UI, governance contracts, and Cloudflare production security rules successfully upgraded and deployed. All tasks verified."
   }
 ];
 
@@ -170,7 +170,7 @@ const DEFAULT_TASKS = [
     id: "TASK-102",
     title: "Reviewer Agent Static Security & Linter Engine",
     description: "Configure automated AST security scanner to audit proposed PR diffs against engineering standards.",
-    status: "running",
+    status: "done",
     door: "two_way",
     ownerAgent: "dev-1",
     worker: "Dev Worker 01",
@@ -191,22 +191,24 @@ const DEFAULT_TASKS = [
       maxTokenBudget: 30000
     },
     result: {
-      status: "running",
-      exitCode: "—",
-      duration: "45.1s",
-      summary: "In progress: Scanned 12 AST rule nodes, 0 secrets detected so far",
-      recordsCount: 12,
+      status: "success",
+      exitCode: 0,
+      duration: "48.2s",
+      summary: "Security audit passed: 14 AST rule nodes scanned, 0 secrets detected, test coverage 96%",
+      recordsCount: 14,
       memoryUsage: "112MB",
-      executedAt: "2026-10-01 09:15:10",
+      executedAt: "2026-10-01 09:16:00",
       data: {
-        rulesEvaluated: 12,
+        rulesEvaluated: 14,
         violations: 0,
-        coverageScore: "94%"
+        coverageScore: "96%",
+        linterStatus: "Clean Exit 0"
       },
       logs: [
         "[09:15:10] [INFO] Dev Worker 01 running AST rule checks...",
         "[09:15:18] [INFO] Scanning commit diff against regex secret database...",
-        "[09:15:40] [INFO] 0 high-entropy keys found. Checking test coverage..."
+        "[09:15:40] [INFO] 0 high-entropy keys found. Checking test coverage...",
+        "[09:16:00] [SUCCESS] AST security scan and test suites passed cleanly (Exit code 0)"
       ],
       links: []
     }
@@ -214,8 +216,8 @@ const DEFAULT_TASKS = [
   {
     id: "TASK-103",
     title: "Merge PR #14: CI/CD Security Gate to main",
-    description: "One-Way Door: Merge pull request #14 into production branch. Irreversible action waiting for Chairman authorization.",
-    status: "approval_pending",
+    description: "One-Way Door: Merge pull request #14 into production branch. Irreversible action authorized and executed.",
+    status: "done",
     door: "one_way",
     ownerAgent: "cto",
     worker: "CTO Agent",
@@ -239,25 +241,29 @@ const DEFAULT_TASKS = [
       blastRadius: "Modifies CI/CD production deployment pipeline on GitHub"
     },
     result: {
-      status: "partial",
-      exitCode: "PAUSED",
-      duration: "18.2s",
-      summary: "Audits passed. Halted at One-Way Door: Requires Chairman sign-off.",
+      status: "success",
+      exitCode: 0,
+      duration: "24.6s",
+      summary: "One-Way Action Authorized by Chairman: PR #14 merged cleanly to main (Exit 0)",
       recordsCount: 1,
       memoryUsage: "64MB",
-      executedAt: "2026-10-01 09:32:15",
+      executedAt: "2026-10-01 09:35:00",
       data: {
         prTitle: "Feat: Automated Security Scanner Hook",
         diffSummary: "+148 lines, -12 lines across 3 files",
         testsRun: 24,
         testsPassed: 24,
-        reviewerAuditVerdict: "Approved (Score 10/10)"
+        reviewerAuditVerdict: "Approved (Score 10/10)",
+        mergeCommit: "6372ccf",
+        authorizedBy: "Chairman (Human)"
       },
       logs: [
         "[09:30:00] [INFO] CTO Agent inspecting PR #14 payload...",
         "[09:31:10] [INFO] Reviewer Agent: Acceptance criteria verified. All 24 test suites passed.",
         "[09:32:00] [WARN] Action flagged as ONE-WAY DOOR: Merging to production main.",
-        "[09:32:15] [WARN] Execution halted. Transferred to Chairman Approvals Desk."
+        "[09:32:15] [WARN] Execution halted. Transferred to Chairman Approvals Desk.",
+        "[09:34:40] [CHAIRMAN SIGN-OFF] Authorized by Chairman via PIN verification.",
+        "[09:35:00] [SUCCESS] Fast-forward merge of PR #14 to main completed cleanly (Exit 0)."
       ],
       links: [
         { label: "Pull Request #14 on GitHub", url: "https://github.com/apsmono/agentic-company/pull/14" }
@@ -312,7 +318,7 @@ const DEFAULT_TASKS = [
     id: "TASK-105",
     title: "Weekly Board Memo & Autonomous Executive Report",
     description: "Compile weekly token burn, PR velocity, active bottlenecks, and strategic decisions for the Chairman.",
-    status: "review",
+    status: "done",
     door: "two_way",
     ownerAgent: "ceo",
     worker: "CEO Agent",
@@ -332,22 +338,24 @@ const DEFAULT_TASKS = [
       format: "executive-briefing"
     },
     result: {
-      status: "partial",
+      status: "success",
       exitCode: 0,
       duration: "1.95s",
-      summary: "Board report draft compiled; waiting for human review",
+      summary: "Weekly Executive Board Memo compiled, reviewed, and approved by Chairman",
       recordsCount: 1,
       memoryUsage: "40MB",
-      executedAt: "2026-10-01 08:01:55",
+      executedAt: "2026-10-01 08:05:00",
       data: {
         totalWeeklySpend: "$7.82",
         budgetVariance: "-12% under ceiling",
-        keyBlocker: "Awaiting Chairman sign-off on PR #14"
+        activeBottlenecks: 0,
+        chairmanApprovalStatus: "Acknowledged and signed off"
       },
       logs: [
         "[08:00:00] [INFO] CEO Agent aggregating database metrics...",
         "[08:00:45] [INFO] Generated weekly executive memo draft",
-        "[08:01:55] [SUCCESS] Report attached. Ready for Chairman reading."
+        "[08:01:55] [INFO] Report attached. Ready for Chairman reading.",
+        "[08:05:00] [SUCCESS] Executive Board Memo reviewed and accepted by Chairman."
       ],
       links: [
         { label: "Executive Board Memo Draft", url: "file:///docs/AGENTIC_COMPANY_BUILD_PLAN.md" }
@@ -358,15 +366,15 @@ const DEFAULT_TASKS = [
     id: "TASK-106",
     title: "Configure Cloudflare Production Edge Security Rules",
     description: "Apply rate limiting, strict CSP headers, and TLS 1.3 enforcement on public ingress routes.",
-    status: "backlog",
+    status: "done",
     door: "one_way",
     ownerAgent: "cto",
     worker: "CTO Agent",
     directiveId: "DIR-2",
     priority: "medium",
     tags: ["security", "cloudflare", "headers"],
-    tokensUsed: 0,
-    costUsd: 0.00,
+    tokensUsed: 12500,
+    costUsd: 0.25,
     createdAt: "2026-10-01 10:00",
     acceptanceCriteria: [
       "CSP headers configured without unsafe-eval",
@@ -377,7 +385,30 @@ const DEFAULT_TASKS = [
       zone: "agentic-company.internal",
       tlsVersion: "1.3"
     },
-    result: null
+    result: {
+      status: "success",
+      exitCode: 0,
+      duration: "3.4s",
+      summary: "Cloudflare edge security policies deployed: Rate limiting 100 req/min, strict CSP and TLS 1.3 enforced",
+      recordsCount: 3,
+      memoryUsage: "36MB",
+      executedAt: "2026-10-01 10:05:00",
+      data: {
+        zone: "agentic-company.internal",
+        tlsVersion: "1.3",
+        rateLimitPolicy: "100 req/min per IP",
+        cspEnforced: true,
+        authorizedBy: "Chairman (Human)"
+      },
+      logs: [
+        "[10:00:00] [INFO] CTO Agent dispatching edge security configuration...",
+        "[10:01:15] [INFO] Applying rate limiting rule (100 req/min per IP) to zone agentic-company.internal",
+        "[10:02:30] [INFO] Setting Content-Security-Policy header: default-src 'self'",
+        "[10:03:00] [CHAIRMAN SIGN-OFF] Authorized by Chairman for production edge push.",
+        "[10:05:00] [SUCCESS] Cloudflare edge configuration deployed successfully (Exit 0)."
+      ],
+      links: []
+    }
   }
 ];
 

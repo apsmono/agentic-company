@@ -14,18 +14,14 @@ Read before any non-trivial change:
 - `docs/PLAN_CRITIQUE.md`: risks and the remedies we adopted
 - `docs/ORGANIZATIONAL_STRUCTURE_AND_GOVERNANCE.md`: background reference only
 
-## Current state (v2.2.0 "Autonomous Executive Loop")
+## Current state (v1.2 "WorkerFlow")
 
-- **Corporate Cockpit Frontend**: **Vanilla HTML/CSS/JS, zero build step** (`index.html`, `styles.css`, `app.js`). Supports **Dual-Mode Persistence** (`LocalStorageAdapter` for mock simulation, `SupabaseAdapter` for live PostgreSQL & Realtime sync), 4-digit Chairman PIN authorization gate (`1234`), Directives Inbox, One-Way Door Approvals Desk, Agent Roster, and Financial Kill Switch.
-- **Headless Worker Daemon (`worker/`)**: Standalone Node.js/TypeScript daemon (`agentic-company-worker`) consuming tasks via PostgreSQL `FOR UPDATE SKIP LOCKED` (`claim_next_task` RPC), 30s heartbeat leases, crash recovery, and buffered log streaming into `run_logs`.
-- **Autonomous Coding Pipeline**: Role configs in `agents/` (`ceo.json`, `dev_worker.json`, `reviewer.json`), security sandbox protecting `.env`, isolated Git Worktrees in `.worktrees/task-XYZ`, and automated Reviewer diff audits against Company Engineering Standards.
-- **Autonomous Executive Loop**: CEO directive decomposition engine, automated weekly Board Memo generation, financial circuit breakers enforcing daily dollar caps, and Telegram bot alerting with mobile `/approve` command.
-- **Automated Test Suites**: All 45 tests pass cleanly:
-  - `npm run test:worker` (15/15: Queue & Telemetry)
-  - `npm run test:pipeline` (12/12: Worktrees, Dev & Reviewer Audit)
-  - `npm run test:ceo` (18/18: CEO Decomposition, Board Memo, Circuit Breakers & Alerts)
-  - Run all: `cd worker && npm run test:all`
-- **Serve Cockpit**: `python3 -m http.server 4321`, then open `http://localhost:4321`.
+- Front end only: **vanilla HTML/CSS/JS, no build step, no dependencies** (Google Fonts only).
+- `index.html` is the UI shell (header, Kanban columns, table view, drawer, modals). `styles.css` is the dark, glassmorphic design system. `app.js` holds all logic.
+- `app.js` layout: `DEFAULT_TASKS` demo data → `TaskManager` class (state, filters, metrics; persisted to `localStorage` under `workerflow_tasks_v1`) → `render*` functions → drawer and modals → simulator (`simulateWorkerRun`, `simulateRunAllQueued`) → drag and drop → `setupEventListeners()`.
+- Workers are **simulated**. There is no backend yet.
+
+Run it: `python3 -m http.server 4321`, then open http://localhost:4321 (or just open `index.html`).
 
 ## Target stack (do not substitute without Chairman approval)
 

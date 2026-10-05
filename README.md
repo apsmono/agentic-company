@@ -1,4 +1,4 @@
-# Agentic Company Cockpit • Task Queue & Executive Dashboard (v2.2.0)
+# Agentic Company Cockpit • Task Queue & Executive Dashboard (v1.4.0)
 
 An autonomous AI company command cockpit built with **vanilla HTML5, CSS3, and JavaScript**. Designed for the human **Chairman** to govern and oversee an autonomous software company where AI agents (CEO, CTO, Dev Workers, Reviewer) plan, decompose, and execute engineering tasks under strict corporate governance.
 
